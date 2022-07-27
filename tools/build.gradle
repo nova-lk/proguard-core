@@ -19,4 +19,8 @@ dependencies {
 application {
     mainClass.set("com.guardsquare.proguard.tools.MainKt")
 }
-
+distributions {
+    main {
+        distributionBaseName = 'pgc-tools'
+    }
+}
