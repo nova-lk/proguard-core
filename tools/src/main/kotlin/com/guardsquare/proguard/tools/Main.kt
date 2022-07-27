@@ -11,32 +11,36 @@ import java.io.Closeable
 import java.io.File
 import java.io.OutputStream
 
-val parser = ArgParser("proguard-core-tools")
+
 @ExperimentalCli
 fun main(args: Array<String>) {
 
-    class DexPrinter : Subcommand("dumpclasses", "Dump all the classes") {
+    val parser = ArgParser("proguard-core-tools")
+
+    class PrintCmd : Subcommand("print", "Print content") {
 
         var input by argument(ArgType.String, description = "Input file name")
+        val programClassPool: ClassPool by lazy { readJar(input, "**", false) }
 
-        override fun execute() {
+        init { subcommands(ClassPrinterCmd(), MethodPrinterCmd()) }
+        override fun execute() { }
 
-            val programClassPool = readJar(input, "**", false)
-
-            programClassPool?.classesAccept(ClassPrinter())
-
+        inner class ClassPrinterCmd : Subcommand("classes", "Print all the classes") {
+            override fun execute() { programClassPool.classesAccept(ClassPrinter()) }
         }
-//        inner class MyMethodPrinter : MemberVisitor {
-//            override fun visitAnyMember(clazz: Clazz, member: Member) {}
-//            override fun visitProgramMethod(programClass: ProgramClass, programMethod: ProgramMethod) {
-//                println(
-//                    programClass.name + "." +
-//                            programMethod.getName(programClass) +
-//                            programMethod.getDescriptor(programClass)
-//                )
-//            }
-//        }
 
+        inner class MethodPrinterCmd : Subcommand("methods", "Print all the methods") {
+            override fun execute() { programClassPool.classesAccept(AllMethodVisitor(MyMethodPrinter())) }
+        }
+
+        inner class MyMethodPrinter : MemberVisitor {
+            override fun visitAnyMember(clazz: Clazz, member: Member) {}
+            override fun visitProgramMethod(programClass: ProgramClass, programMethod: ProgramMethod) {
+                println( programClass.name + "." +
+                         programMethod.getName(programClass) +
+                         programMethod.getDescriptor(programClass) )
+            }
+        }
     }
 
     class Dex2Jar : Subcommand("dex2jar", "Convert dex to jar") {
@@ -46,7 +50,7 @@ fun main(args: Array<String>) {
 
         override fun execute() {
             val programClassPool = readJar(input, "**", false)
-            writeJar(programClassPool!!, (File(output)), "Main")
+            writeJar(programClassPool, (File(output)), "Main")
         }
         private fun writeJar(programClassPool: ClassPool, file: File, mainClass: String) {
             class MyJarWriter(zipEntryWriter: DataEntryWriter) : JarWriter(zipEntryWriter), Closeable {
@@ -81,10 +85,10 @@ fun main(args: Array<String>) {
     }
 
     // TODO
-    class Jar2Dex : Subcommand("jar2dex", "Convert jar to dex") {
+    class Jar2Dex : Subcommand("jar2dex", "Convert jar to dex - NOT YET IMPLEMENTED") {
 
         var input by argument(ArgType.String, description = "Input file name")
-        var output by option(ArgType.String, description = "Output file name")
+        var output by option(ArgType.String, description = "Output file name", shortName = "o")
         override fun execute() {
             TODO("Not yet implemented")
         }
@@ -92,9 +96,10 @@ fun main(args: Array<String>) {
 
     val dex2jar = Dex2Jar()
     val jar2Dex = Jar2Dex()
-    val dumpclaases = DexPrinter()
+    val dump= PrintCmd()
 
-    parser.subcommands(dex2jar, jar2Dex, dumpclaases)
+
+    parser.subcommands(dex2jar, jar2Dex, dump)
     parser.parse(args)
 
 }
@@ -102,10 +107,10 @@ fun main(args: Array<String>) {
 
 
 fun readJar(
-    jarFileName: String?,
-    classNameFilter: String?,
+    jarFileName: String,
+    classNameFilter: String,
     isLibrary: Boolean
-): ClassPool? {
+): ClassPool {
     val classPool = ClassPool()
 
     // Parse all classes from the input jar and
