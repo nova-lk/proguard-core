@@ -9,7 +9,6 @@ import proguard.util.ExtensionMatcher
 import proguard.util.OrMatcher
 import java.io.Closeable
 import java.io.File
-import java.io.OutputStream
 
 
 @ExperimentalCli
@@ -50,23 +49,24 @@ fun main(args: Array<String>) {
     class Dex2Jar : Subcommand("dex2jar", "Convert dex to jar") {
 
         var input by argument(ArgType.String, description = "Input file name")
-        var output by option(ArgType.String, description = "Output file name", shortName = "o").default("dex2jar_output.jar")
+        var output by option(ArgType.String, description = "Output file name", shortName = "o", fullName = "output").default("classes.jar")
+        var classNameFilter by option(ArgType.String, description = "Class name filter", shortName = "cf",fullName = "classNameFilter").default("**")
+        var forceOverwrite by option(ArgType.Boolean, description = "Force file overwriting", shortName = "f", fullName = "force").default(false)
 
         override fun execute() {
-            val programClassPool = readJar(input, "**", false)
-            writeJar(programClassPool, (File(output)), "Main")
-            println("dex2jar $input -> $output")
+            val programClassPool = readJar(input, classNameFilter, false)
+            val file = File(output)
+            if (file.exists() && !forceOverwrite) {
+                System.err.println("$file exists, use --force to overwrite")
+                return
+            }
+//            if (file.exists() && !forceOverwrite) throw FileAlreadyExistsException()
+
+            writeJar(programClassPool, file)
         }
-        private fun writeJar(programClassPool: ClassPool, file: File, mainClass: String) {
+
+        private fun writeJar(programClassPool: ClassPool, file: File) {
             class MyJarWriter(zipEntryWriter: DataEntryWriter) : JarWriter(zipEntryWriter), Closeable {
-                override fun createManifestOutputStream(manifestEntry: DataEntry): OutputStream {
-                    val outputStream = super.createManifestOutputStream(manifestEntry)
-                    outputStream.writer().apply {
-                        appendLine("Main-Class: $mainClass")
-                        flush()
-                    }
-                    return outputStream
-                }
                 override fun close() { super.close() }
             }
             val jarWriter = MyJarWriter(ZipWriter(FixedFileWriter(file)))
@@ -74,20 +74,15 @@ fun main(args: Array<String>) {
         }
     }
 
-    // TODO
-    class Jar2Dex : Subcommand("jar2dex", "Convert jar to dex - NOT YET IMPLEMENTED") {
+    class Jar2DexCmd : Subcommand("jar2dex", "Convert jar to dex - NOT YET IMPLEMENTED") {
         var input by argument(ArgType.String, description = "Input file name")
-        var output by option(ArgType.String, description = "Output file name", shortName = "o")
+        var output by option(ArgType.String, description = "Output file name", shortName = "o", fullName = "output")
         override fun execute() {
             TODO("Not yet implemented")
         }
     }
 
-    val dex2jar = Dex2Jar()
-    val jar2Dex = Jar2Dex()
-    val dump= PrintCmd()
-
-    parser.subcommands(dex2jar, jar2Dex, dump)
+    parser.subcommands(Dex2Jar(), PrintCmd(), Jar2DexCmd())
     parser.parse(args)
 }
 
