@@ -42,24 +42,14 @@ fun main(args: Array<String>) {
             inner class ClassNamePrinter : ClassVisitor {
                 override fun visitAnyClass(clazz: Clazz) {}
                 override fun visitProgramClass(programClass: ProgramClass) {
-                    println(programClass.name)
+                    println(externalClassName(programClass.name))
                 }
             }
         }
 
         inner class MethodNamePrinterCmd : Subcommand("methods", "List all the methods") {
             override fun execute() {
-                programClassPool.classesAccept(AllMethodVisitor(MethodNamePrinter()))
-            }
-
-            inner class MethodNamePrinter : MemberVisitor {
-                override fun visitProgramMethod(programClass: ProgramClass, programMethod: ProgramMethod) {
-                    println(
-                        programClass.name + "." +
-                                programMethod.getName(programClass) +
-                                programMethod.getDescriptor(programClass)
-                    )
-                }
+                programClassPool.classesAccept(AllMethodVisitor(MemberPrinter()))
             }
         }
 
@@ -118,7 +108,7 @@ fun main(args: Array<String>) {
             subcommands(ClassPrinterCmd())
         }
 
-        override fun execute() {}
+        override fun execute() { }
 
         inner class ClassPrinterCmd : Subcommand("classes", "Print all the classes") {
             override fun execute() {
@@ -156,8 +146,6 @@ fun main(args: Array<String>) {
                 System.err.println("$file exists, use --force to overwrite")
                 return
             }
-//            if (file.exists() && !forceOverwrite) throw FileAlreadyExistsException() // fixme
-
             writeJar(programClassPool, file)
         }
 
@@ -174,6 +162,7 @@ fun main(args: Array<String>) {
     }
 
     class Jar2DexCmd : Subcommand("jar2dex", "Convert jar to dex - NOT YET IMPLEMENTED") {
+
         var input by argument(ArgType.String, description = "Input file name")
         var output by option(ArgType.String, description = "Output file name", shortName = "o", fullName = "output")
         override fun execute() {
