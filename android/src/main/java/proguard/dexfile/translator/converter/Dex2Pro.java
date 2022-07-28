@@ -16,13 +16,6 @@
  */
 package proguard.dexfile.translator.converter;
 
-import proguard.dexfile.ir.IrMethod;
-import proguard.dexfile.ir.ts.*;
-import proguard.dexfile.ir.ts.array.FillArrayTransformer;
-import proguard.dexfile.reader.api.*;
-import proguard.dexfile.reader.api.Field;
-import proguard.dexfile.reader.api.node.*;
-import proguard.dexfile.translator.dex.DexFix;
 import proguard.classfile.*;
 import proguard.classfile.attribute.*;
 import proguard.classfile.attribute.annotation.*;
@@ -32,6 +25,14 @@ import proguard.classfile.util.ClassUtil;
 import proguard.classfile.visitor.AllMethodVisitor;
 import proguard.classfile.visitor.ClassVisitor;
 import proguard.classfile.visitor.MemberVisitor;
+import proguard.dexfile.ir.IrMethod;
+import proguard.dexfile.ir.ts.*;
+import proguard.dexfile.ir.ts.array.FillArrayTransformer;
+import proguard.dexfile.reader.api.Field;
+import proguard.dexfile.reader.api.Method;
+import proguard.dexfile.reader.api.*;
+import proguard.dexfile.reader.api.node.*;
+import proguard.dexfile.translator.dex.DexFix;
 import proguard.io.ClassReader;
 
 import java.io.InputStream;
@@ -69,7 +70,7 @@ public class Dex2Pro {
     private static class Clz {
         private int access;
         private Clz enclosingClass;
-        private proguard.dexfile.reader.api.Method enclosingMethod;
+        private Method enclosingMethod;
         private String innerName;
         private Set<Clz> inners = null;
         private final String name;
@@ -400,7 +401,7 @@ public class Dex2Pro {
         } else if (o instanceof DexType) {
             return new ClassElementValue(elementNameIndex,
                     cpe.addUtf8Constant(((DexType) o).desc));
-        } else if (o instanceof proguard.dexfile.reader.api.Method) {
+        } else if (o instanceof Method) {
             System.err.println("WARN: ignored method annotation value");
         } else if (o == null) {
             System.err.println("WARN: ignored null annotation value");
@@ -434,7 +435,7 @@ public class Dex2Pro {
                             }
                             break;
                             case DexConstants.ANNOTATION_ENCLOSING_METHOD_TYPE: {
-                                proguard.dexfile.reader.api.Method m = (proguard.dexfile.reader.api.Method) findAnnotationAttribute(ann, "value");
+                                Method m = (Method) findAnnotationAttribute(ann, "value");
                                 Clz enclosingClass = get(classes, m.getOwner());
                                 clz.enclosingClass = enclosingClass;
                                 clz.enclosingMethod = m;
@@ -581,7 +582,7 @@ public class Dex2Pro {
             if (isInnerClass) {
                 // Add the enclosing method attribute, for enclosed classes
                 // and for anonymous classes.
-                proguard.dexfile.reader.api.Method enclosingMethod = clzInfo.enclosingMethod;
+                Method enclosingMethod = clzInfo.enclosingMethod;
                 if (enclosingMethod != null ||
                         clzInfo.innerName == null) {
                     EnclosingMethodAttribute enclosingMethodAttribute =

@@ -1,39 +1,36 @@
 import com.tschuchort.compiletesting.SourceFile
+import org.intellij.lang.annotations.Language
 import org.jf.smali.Smali
 import org.jf.smali.SmaliOptions
 import proguard.classfile.visitor.ClassPrinter
 import proguard.util.JarUtil
-import testutils.*
+import testutils.ClassPoolBuilder
+import testutils.ClassPools
+import testutils.TestSource
 import java.io.File
 
-class SmaliSource(val filename: String, val contents: String) : TestSource() {
+class SmaliSource(val filename: String, @Language("Smali") val contents: String) : TestSource() {
     override fun asSourceFile() = SourceFile.new(filename, contents)
 }
 
 fun ClassPoolBuilder.Companion.fromSmali(smali: SmaliSource) : ClassPools {
     // smali -> baksmali -> dex file -> dex2pro -> class -> JavaSource
 
-    val file = File(smali.filename)
-    file.createNewFile()
+    val file = File.createTempFile("tmp", null)
     file.writeText(smali.contents)
 
     val options = SmaliOptions()
-    options.outputDexFile = "classes.dex"
-    Smali.assemble(options, smali.filename)
+    val dexFileName = "classes.dex"
+    options.outputDexFile = dexFileName
+    Smali.assemble(options, file.absolutePath)
 
-    file.delete()
+    file.deleteOnExit()
 
-    val jarFileName = "temp.jar"
-    val classPool = JarUtil.readJar("classes.dex", false)
-    classPool.classesAccept(ClassPrinter())
-    JarUtil.writeJar(classPool, jarFileName)
-    val source = TestSource.fromFile(File(jarFileName))
+    val classPool = JarUtil.readJar(dexFileName, false)
+//    val f = File(dexFileName)
+//    f.deleteOnExit()
+//    classPool.classesAccept(ClassPrinter())
 
-    return fromSource(source)
-
-//    val dexClassReader = DexClassReader( )
-
-/*    return ClassPoolBuilder.fromSource(
-
-    )*/
+    initialize(classPool, false)
+    return ClassPools(classPool, libraryClassPool)
 }

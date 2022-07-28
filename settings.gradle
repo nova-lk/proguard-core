@@ -12,3 +12,6 @@ rootProject.name = 'proguard-core'
 include 'base'
 include 'android'
 include 'examples'
+
+project(":base").name = "proguard-core"
+project(":android").name = "proguard-core-android"

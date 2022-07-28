@@ -8,8 +8,8 @@ repositories {
 }
 
 dependencies {
-    implementation project(":base")
-    implementation project(":android")
+    implementation project(":proguard-core")
+    implementation project(":proguard-core-android")
 }
 
 java {

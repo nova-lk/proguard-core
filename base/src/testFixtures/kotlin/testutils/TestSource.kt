@@ -18,8 +18,13 @@ abstract class TestSource {
             return when {
                 file.isJavaFile() -> JavaSource(file.name, file.readText())
                 file.isKotlinFile() -> KotlinSource(file.name, file.readText())
+                file.isClassFile() -> ClassSource(file.name, file.readBytes())
                 else -> FileSource(file)
             }
+        }
+
+        fun fromClassBytes(name:String, bytes: ByteArray) : TestSource {
+            return ClassSource(name, bytes)
         }
     }
 
@@ -40,4 +45,11 @@ class FileSource(val file: File) : TestSource() {
 
 class AssemblerSource(val filename: String, val contents: String) : TestSource() {
     override fun asSourceFile(): SourceFile = throw IllegalStateException("Should not be called")
+}
+
+class ClassSource(val filename: String, val contents: ByteArray) : TestSource() {
+    override fun asSourceFile(): SourceFile {
+        TODO("Not yet implemented")
+    }
+
 }

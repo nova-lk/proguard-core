@@ -34,9 +34,9 @@ dependencies {
 
     testFixturesImplementation 'com.github.tschuchortdev:kotlin-compile-testing:1.4.9'
 
-    implementation project(":base")
-    testImplementation(testFixtures(project(":base")))
-    testFixturesImplementation(testFixtures(project(":base")))
+    implementation project(":proguard-core")
+    testImplementation(testFixtures(project(":proguard-core")))
+    testFixturesImplementation(testFixtures(project(":proguard-core")))
 
     testFixturesImplementation 'org.smali:smali:2.5.2'
 //    implementation 'org.smali:baksmali:2.5.2'
