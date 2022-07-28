@@ -3,6 +3,7 @@ package com.guardsquare.proguard.tools
 import dexreader.reader.DexClassReader
 import kotlinx.cli.*
 import proguard.classfile.*
+import proguard.classfile.util.ClassUtil.*
 import proguard.classfile.visitor.*
 import proguard.io.*
 import proguard.util.ExtensionMatcher
@@ -16,42 +17,137 @@ fun main(args: Array<String>) {
 
     val parser = ArgParser("proguard-core-tools")
 
-    class PrintCmd : Subcommand("print", "Print content") {
+    class ListCmd : Subcommand("list", "List classes, methods & methods") {
 
         var input by argument(ArgType.String, description = "Input file name")
-        val programClassPool: ClassPool by lazy { readJar(input, "**", false) }
+        var classNameFilter by option(
+            ArgType.String,
+            description = "Class name filter",
+            shortName = "cf",
+            fullName = "classNameFilter"
+        ).default("**")
+        val programClassPool: ClassPool by lazy { readJar(input, classNameFilter, false) }
 
-        init { subcommands( ClassPrinterCmd(), MethodPrinterCmd(), FieldPrinterCmd() ) }
-        override fun execute() { }
-
-        inner class ClassPrinterCmd : Subcommand("classes", "Print all the classes") {
-            override fun execute() { programClassPool.classesAccept(ClassPrinter()) }
+        init {
+            subcommands(ClassNamePrinterCmd(), MethodNamePrinterCmd(), FieldNamePrinterCmd(), MemberPrinterCmd())
         }
 
-        inner class MethodPrinterCmd : Subcommand("methods", "Print all the methods") {
-            override fun execute() { programClassPool.classesAccept(AllMethodVisitor(MyMethodPrinter())) }
-            inner class MyMethodPrinter : MemberVisitor {
-                override fun visitAnyMember(clazz: Clazz, member: Member) {}
-                override fun visitProgramMethod(programClass: ProgramClass, programMethod: ProgramMethod) {
-                    println( programClass.name + "." +
-                            programMethod.getName(programClass) +
-                            programMethod.getDescriptor(programClass) ) } } }
+        override fun execute() {}
 
-        inner class FieldPrinterCmd : Subcommand("fields", "Print all the fields") {
-            override fun execute() { programClassPool.classesAccept(AllFieldVisitor(MyFieldPrinter())) }
-            inner class MyFieldPrinter : MemberVisitor {
-                override fun visitProgramField(programClass: ProgramClass, programField: ProgramField) {
+        inner class ClassNamePrinterCmd : Subcommand("classes", "List all the classes") {
+            override fun execute() {
+                programClassPool.classesAccept(ClassNamePrinter())
+            }
+
+            inner class ClassNamePrinter : ClassVisitor {
+                override fun visitAnyClass(clazz: Clazz) {}
+                override fun visitProgramClass(programClass: ProgramClass) {
+                    println(programClass.name)
+                }
+            }
+        }
+
+        inner class MethodNamePrinterCmd : Subcommand("methods", "List all the methods") {
+            override fun execute() {
+                programClassPool.classesAccept(AllMethodVisitor(MethodNamePrinter()))
+            }
+
+            inner class MethodNamePrinter : MemberVisitor {
+                override fun visitProgramMethod(programClass: ProgramClass, programMethod: ProgramMethod) {
                     println(
                         programClass.name + "." +
-                                programField.getName(programClass) ) } } }
+                                programMethod.getName(programClass) +
+                                programMethod.getDescriptor(programClass)
+                    )
+                }
+            }
+        }
+
+        inner class FieldNamePrinterCmd : Subcommand("fields", "List all the fields") {
+            override fun execute() {
+                programClassPool.classesAccept(AllFieldVisitor(MemberPrinter()))
+            }
+        }
+
+        inner class MemberPrinterCmd : Subcommand("members", "List all the members") {
+            override fun execute() {
+                programClassPool.classesAccept(AllMemberVisitor(MemberPrinter()))
+            }
+        }
+
+        inner class MemberPrinter : MemberVisitor {
+
+            override fun visitAnyMember(clazz: Clazz, member: Member) { }
+
+            override fun visitProgramField(programClass: ProgramClass, programField: ProgramField) {
+                println(
+                    externalClassName(programClass.name) + " " +
+                            externalFullFieldDescription(
+                                programField.accessFlags,
+                                programField.getName(programClass),
+                                programField.getDescriptor(programClass)
+                            )
+                )
+            }
+
+            override fun visitProgramMethod(programClass: ProgramClass, programMethod: ProgramMethod) {
+                println(
+                    externalFullMethodDescription(
+                        programClass.name,
+                        programMethod.accessFlags,
+                        programMethod.getName(programClass),
+                        programMethod.getDescriptor(programClass)
+                    )
+                )
+            }
+        }
     }
 
-    class Dex2Jar : Subcommand("dex2jar", "Convert dex to jar") {
+    class PrintCmd : Subcommand("print", "Print classes details") {
 
         var input by argument(ArgType.String, description = "Input file name")
-        var output by option(ArgType.String, description = "Output file name", shortName = "o", fullName = "output").default("classes.jar")
-        var classNameFilter by option(ArgType.String, description = "Class name filter", shortName = "cf",fullName = "classNameFilter").default("**")
-        var forceOverwrite by option(ArgType.Boolean, description = "Force file overwriting", shortName = "f", fullName = "force").default(false)
+        var classNameFilter by option(
+            ArgType.String,
+            description = "Class name filter",
+            shortName = "cf",
+            fullName = "classNameFilter"
+        ).default("**")
+        val programClassPool: ClassPool by lazy { readJar(input, classNameFilter, false) }
+
+        init {
+            subcommands(ClassPrinterCmd())
+        }
+
+        override fun execute() {}
+
+        inner class ClassPrinterCmd : Subcommand("classes", "Print all the classes") {
+            override fun execute() {
+                programClassPool.classesAccept(ClassPrinter())
+            }
+        }
+    }
+
+    class Dex2JarCmd : Subcommand("dex2jar", "Convert dex to jar") {
+
+        var input by argument(ArgType.String, description = "Input file name")
+        var output by option(
+            ArgType.String,
+            description = "Output file name",
+            shortName = "o",
+            fullName = "output"
+        ).default("classes.jar")
+        var classNameFilter by option(
+            ArgType.String,
+            description = "Class name filter",
+            shortName = "cf",
+            fullName = "classNameFilter"
+        ).default("**")
+        var forceOverwrite by option(
+            ArgType.Boolean,
+            description = "Force file overwriting",
+            shortName = "f",
+            fullName = "force"
+        ).default(false)
 
         override fun execute() {
             val programClassPool = readJar(input, classNameFilter, false)
@@ -60,15 +156,18 @@ fun main(args: Array<String>) {
                 System.err.println("$file exists, use --force to overwrite")
                 return
             }
-//            if (file.exists() && !forceOverwrite) throw FileAlreadyExistsException()
+//            if (file.exists() && !forceOverwrite) throw FileAlreadyExistsException() // fixme
 
             writeJar(programClassPool, file)
         }
 
         private fun writeJar(programClassPool: ClassPool, file: File) {
             class MyJarWriter(zipEntryWriter: DataEntryWriter) : JarWriter(zipEntryWriter), Closeable {
-                override fun close() { super.close() }
+                override fun close() {
+                    super.close()
+                }
             }
+
             val jarWriter = MyJarWriter(ZipWriter(FixedFileWriter(file)))
             jarWriter.use { programClassPool.classesAccept(DataEntryClassWriter(it)) }
         }
@@ -82,7 +181,7 @@ fun main(args: Array<String>) {
         }
     }
 
-    parser.subcommands(Dex2Jar(), PrintCmd(), Jar2DexCmd())
+    parser.subcommands(Dex2JarCmd(), Jar2DexCmd(), ListCmd(), PrintCmd())
     parser.parse(args)
 }
 
@@ -97,11 +196,16 @@ fun readJar(
 
     var classReader: DataEntryReader = NameFilteredDataEntryReader(
         "**.class",
-        ClassReader(isLibrary, false, false, false, null,
-            ClassNameFilter(classNameFilter, acceptedClassVisitor) ) )
+        ClassReader(
+            isLibrary, false, false, false, null,
+            ClassNameFilter(classNameFilter, acceptedClassVisitor)
+        )
+    )
 
-    classReader = NameFilteredDataEntryReader("classes*.dex",
-        DexClassReader(!isLibrary, acceptedClassVisitor), classReader)
+    classReader = NameFilteredDataEntryReader(
+        "classes*.dex",
+        DexClassReader(!isLibrary, acceptedClassVisitor), classReader
+    )
 
     classReader = FilteredDataEntryReader(
         DataEntryNameFilter(ExtensionMatcher("aar")),
