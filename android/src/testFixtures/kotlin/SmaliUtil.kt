@@ -11,3 +11,10 @@ fun getAllSmaliResources() : List<File> {
         .map { it.toFile() }
         .collect(Collectors.toList())
 }
+
+fun getSmaliResource (name : String) : File {
+
+    val res = object{}::class.java.getResource("smali/$name")
+    return Paths.get(res.toURI()).toFile()
+
+}
