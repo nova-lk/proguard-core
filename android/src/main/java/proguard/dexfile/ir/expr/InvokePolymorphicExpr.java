@@ -20,7 +20,7 @@ import proguard.dexfile.ir.Util;
 import proguard.dexfile.reader.Method;
 import proguard.dexfile.reader.Proto;
 
-public class InvokePolymorphicExpr extends AbstractInvokeExpr {
+public class InvokePolymorphicExpr extends InvokeExpr {
     public Proto proto;
     public Method method;
 
@@ -37,18 +37,18 @@ public class InvokePolymorphicExpr extends AbstractInvokeExpr {
     }
 
     public InvokePolymorphicExpr(Value.VT type, Value[] args, Proto proto, Method method) {
-        super(type, args);
+        super(type, args, method);
         this.proto = proto;
         this.method = method;
     }
 
     @Override
-    public Value clone() {
+    public InvokePolymorphicExpr clone() {
         return new InvokePolymorphicExpr(vt, cloneOps(), proto, method);
     }
 
     @Override
-    public Value clone(LabelAndLocalMapper mapper) {
+    public InvokePolymorphicExpr clone(LabelAndLocalMapper mapper) {
         return new InvokePolymorphicExpr(vt, cloneOps(mapper), proto, method);
     }
 

@@ -292,14 +292,13 @@ public class TypeTransformer implements Transformer {
 
             switch (clz) {
                 case ZI:
+                case INT:
+                case IF:
                     return "I";
                 case ZIFL:
                 case ZIF:
                 case ZIL:
                     return "Z";
-                case INT:
-                case IF:
-                    return "I";
                 default:
             }
             throw new RuntimeException();
@@ -332,12 +331,10 @@ public class TypeTransformer implements Transformer {
         public boolean addUses(String ele) {
             assert this.next == null;
             TypeRef t = this;
-            if (t.uses != null) {
-                return t.uses.add(ele);
-            } else {
+            if (t.uses == null) {
                 t.uses = new LinkedHashSet<>();
-                return t.uses.add(ele);
             }
+            return t.uses.add(ele);
         }
 
         public boolean addAllUses(Set<String> uses) {
@@ -1016,7 +1013,7 @@ public class TypeTransformer implements Transformer {
         private TypeRef getDefTypeRef(Value v) {
             Object object = v.tag;
             TypeRef typeRef;
-            if (object == null || !(object instanceof TypeRef)) {
+            if (!(object instanceof TypeRef)) {
                 typeRef = new TypeRef(v);
                 refs.add(typeRef);
                 v.tag = typeRef;

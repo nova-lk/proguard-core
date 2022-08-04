@@ -76,7 +76,7 @@ public class ExceptionHandlerTrim implements Transformer {
     public void transform(IrMethod irMethod) {
         List<Trap> trips = irMethod.traps;
         irMethod.traps = new ArrayList();
-        LabelAndLocalMapper map=new LabelAndLocalMapper(){
+        LabelAndLocalMapper map = new LabelAndLocalMapper() {
             @Override
             public LabelStmt map(LabelStmt label) {
                 return label;
@@ -85,8 +85,7 @@ public class ExceptionHandlerTrim implements Transformer {
         int counter = 0;
         for (Trap trap : trips) {
             if(counter % 100 == 0) {
-                if (Util.irTransformMemoryLimit > 0 && Util.isMemoryLimitReached(Util.irTransformMemoryLimit))
-                {
+                if (Util.irTransformMemoryLimit > 0 && Util.isMemoryLimitReached(Util.irTransformMemoryLimit)) {
                     throw new RuntimeException("Memory Limit Reached");
                 }
             }
@@ -104,7 +103,6 @@ public class ExceptionHandlerTrim implements Transformer {
                         ntrap.start = (LabelStmt) pre;
                         status = 1;
                     }  // continue;
-
 
                 } else if (status == 1) {
                     Stmt pre = p.getPre();

@@ -19,7 +19,7 @@ import proguard.dexfile.ir.LabelAndLocalMapper;
 import proguard.dexfile.reader.MethodHandle;
 import proguard.dexfile.reader.Proto;
 
-public class InvokeCustomExpr extends AbstractInvokeExpr {
+public class InvokeCustomExpr extends InvokeExpr {
     public String name;
     public Proto proto;
     public MethodHandle handle;
@@ -40,7 +40,7 @@ public class InvokeCustomExpr extends AbstractInvokeExpr {
     }
 
     public InvokeCustomExpr(VT type, Value[] args, String methodName, Proto proto, MethodHandle handle, Object[] bsmArgs) {
-        super(type, args);
+        super(type, args, handle == null ? null : handle.getMethod());
         this.proto = proto;
         this.name = methodName;
         this.handle = handle;
@@ -48,12 +48,12 @@ public class InvokeCustomExpr extends AbstractInvokeExpr {
     }
 
     @Override
-    public Value clone() {
+    public InvokeCustomExpr clone() {
         return new InvokeCustomExpr(vt, cloneOps(), name, proto, handle, bsmArgs);
     }
 
     @Override
-    public Value clone(LabelAndLocalMapper mapper) {
+    public InvokeCustomExpr clone(LabelAndLocalMapper mapper) {
         return new InvokeCustomExpr(vt, cloneOps(mapper), name, proto, handle, bsmArgs);
     }
 

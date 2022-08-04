@@ -240,10 +240,8 @@ public class Cfg {
 
         int counter = 0;
         while (!stack.isEmpty()) {
-            if(counter % 100 == 0)
-            {
-                if (Util.irTransformMemoryLimit > 0 && Util.isMemoryLimitReached(Util.irTransformMemoryLimit))
-                {
+            if(counter % 100 == 0) {
+                if (Util.irTransformMemoryLimit > 0 && Util.isMemoryLimitReached(Util.irTransformMemoryLimit)) {
                     throw new RuntimeException("Memory Limit Reached");
                 }
             }
