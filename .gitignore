@@ -1,7 +1,8 @@
-build
-.gradle
+**/build/
 .idea/
+.gradle/
 *.iml
+/android/classes.dex
 /docs/md/api/
 /docs/html/
 /venv/
