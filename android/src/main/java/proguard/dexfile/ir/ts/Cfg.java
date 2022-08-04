@@ -22,8 +22,8 @@ import proguard.dexfile.ir.Util;
 import proguard.dexfile.ir.expr.Constant;
 import proguard.dexfile.ir.expr.Local;
 import proguard.dexfile.ir.expr.Value;
-import proguard.dexfile.reader.DexType;
 import proguard.dexfile.ir.stmt.*;
+import proguard.dexfile.reader.DexType;
 
 import java.util.Collections;
 import java.util.Set;
@@ -240,8 +240,10 @@ public class Cfg {
 
         int counter = 0;
         while (!stack.isEmpty()) {
-            if (counter % 100 == 0) {
-                if (Util.irTransformMemoryLimit > 0 && Util.isMemoryLimitReached(Util.irTransformMemoryLimit)) {
+            if(counter % 100 == 0)
+            {
+                if (Util.irTransformMemoryLimit > 0 && Util.isMemoryLimitReached(Util.irTransformMemoryLimit))
+                {
                     throw new RuntimeException("Memory Limit Reached");
                 }
             }

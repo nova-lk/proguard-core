@@ -20,7 +20,7 @@ import proguard.dexfile.ir.expr.*;
 public class MultiArrayTransformer extends StatedTransformer {
     @Override
     public boolean transformReportChanged(IrMethod method) {
-        final boolean changed[] = {false};
+        final boolean[] changed = {false};
         new StmtTraveler() {
             @Override
             public Value travel(Value op) {
@@ -50,7 +50,7 @@ public class MultiArrayTransformer extends StatedTransformer {
                                 String elementType = null;
                                 if (arg0.vt == Value.VT.CONSTANT) {
                                     Object value = ((Constant) arg0).value;
-                                    if (!(value instanceof Integer && ((Integer) value) == 0)) {
+                                    if (!(value instanceof Integer && ((Integer) value) == 0)){
                                         elementType = ((DexType) value).desc;
                                     }
                                 } else {

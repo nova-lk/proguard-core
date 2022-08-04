@@ -19,13 +19,16 @@ package proguard.dexfile.ir.ts;
 import proguard.dexfile.ir.ET;
 import proguard.dexfile.ir.IrMethod;
 import proguard.dexfile.ir.StmtTraveler;
+import proguard.dexfile.ir.expr.*;
 import proguard.dexfile.ir.stmt.AssignStmt;
 import proguard.dexfile.ir.stmt.LabelStmt;
 import proguard.dexfile.ir.stmt.Stmt;
 import proguard.dexfile.ir.stmt.Stmts;
-import proguard.dexfile.ir.expr.*;
 
 import java.util.*;
+
+import static proguard.dexfile.ir.expr.Value.VT.*;
+import static proguard.dexfile.ir.stmt.Stmt.ST.*;
 
 /**
  * simply merge
@@ -69,7 +72,7 @@ public class NewTransformer implements Transformer {
     void replaceX(IrMethod method) {
         final Map<Local, TObject> init = new HashMap<>();
         for (Stmt p : method.stmts) {
-            if (p.st == Stmt.ST.ASSIGN && p.getOp1().vt == Value.VT.LOCAL && p.getOp2().vt == Value.VT.NEW) {
+            if (p.st == ASSIGN && p.getOp1().vt == LOCAL && p.getOp2().vt == NEW) {
                 // the stmt is a new assign stmt
                 Local local = (Local) p.getOp1();
                 init.put(local, new TObject(local, (AssignStmt) p));
@@ -92,12 +95,12 @@ public class NewTransformer implements Transformer {
         for (Iterator<Stmt> it = method.stmts.iterator(); it.hasNext(); ) {
             Stmt p = it.next();
 
-            InvokeExpr ie = findInvokeExpr(p);
+            InvokeExpr ie = findInvokeExpr(p, null);
 
             if (ie != null) {
                 if ("<init>".equals(ie.getName()) && "V".equals(ie.getRet())) {
                     Value[] orgOps = ie.getOps();
-                    if (orgOps[0].vt == Value.VT.NEW) {
+                    if (orgOps[0].vt == NEW) {
                         NewExpr newExpr = (NewExpr) ie.getOps()[0];
                         if (newExpr != null) {
                             Value[] nOps = Arrays.copyOfRange(orgOps, 1, orgOps.length);
@@ -114,7 +117,7 @@ public class NewTransformer implements Transformer {
     void replace0(IrMethod method, Map<Local, TObject> init, int size) {
         Set<Local> toDelete = new HashSet<>();
 
-        Local locals[] = new Local[size];
+        Local[] locals = new Local[size];
         for (Local local : method.locals) {
             locals[local._ls_index] = local;
         }
@@ -132,7 +135,7 @@ public class NewTransformer implements Transformer {
         // delete the locals
         for (Iterator<Stmt> it = method.stmts.iterator(); it.hasNext(); ) {
             Stmt p = it.next();
-            if (p.st == Stmt.ST.ASSIGN && p.getOp1().vt == Value.VT.LOCAL) {
+            if (p.st == ASSIGN && p.getOp1().vt == LOCAL) {
                 if (toDelete.contains((Local) p.getOp1())) {
                     it.remove();
                 }
@@ -150,7 +153,7 @@ public class NewTransformer implements Transformer {
                     }
                 }
             }
-            InvokeExpr ie = findInvokeExpr(obj.invokeStmt);
+            InvokeExpr ie = findInvokeExpr(obj.invokeStmt, null);
             Value[] orgOps = ie.getOps();
             Value[] nOps = Arrays.copyOfRange(orgOps, 1, orgOps.length);
             InvokeExpr invokeNew = Exprs.nInvokeNew(nOps, ie.getArgs(), ie.getOwner());
@@ -172,13 +175,13 @@ public class NewTransformer implements Transformer {
 
                     this.current = stmt;
                     if (stmt.et == ET.E2) {
-                        if (stmt.getOp1().vt == Value.VT.LOCAL) {
+                        if (stmt.getOp1().vt == LOCAL) {
                             Local op1 = (Local) stmt.getOp1();
-                            if (stmt.getOp2().vt == Value.VT.LOCAL) {
+                            if (stmt.getOp2().vt == LOCAL) {
                                 Local op2 = (Local) stmt.getOp2();
                                 tmp[op1._ls_index] = tmp[op2._ls_index];
                                 return stmt;
-                            } else if (stmt.getOp2().vt == Value.VT.NEW) {
+                            } else if (stmt.getOp2().vt == NEW) {
                                 tmp[op1._ls_index] = new Vx(init.get(op1), false);
                                 return stmt;
                             } else {
@@ -188,7 +191,7 @@ public class NewTransformer implements Transformer {
                             }
                         }
                     }
-                    if (stmt.st == Stmt.ST.LABEL) {
+                    if (stmt.st == LABEL) {
                         LabelStmt labelStmt = (LabelStmt) stmt;
                         if (labelStmt.phis != null) {
                             for (AssignStmt phi : labelStmt.phis) {
@@ -203,12 +206,12 @@ public class NewTransformer implements Transformer {
 
                 @Override
                 public Value travel(Value op) {
-                    if (op.vt == Value.VT.INVOKE_SPECIAL) {
+                    if (op.vt == INVOKE_SPECIAL) {
                         if (op.getOps().length >= 1) {
                             InvokeExpr ie = (InvokeExpr) op;
                             if ("<init>".equals(ie.getName())) {
                                 Value thiz = op.getOps()[0];
-                                if (thiz.vt == Value.VT.LOCAL) {
+                                if (thiz.vt == LOCAL) {
                                     Local local = (Local) thiz;
                                     Vx vx = tmp[local._ls_index];
                                     TObject object = vx.obj;
@@ -233,7 +236,7 @@ public class NewTransformer implements Transformer {
                     }
                     op = super.travel(op);
 
-                    if (op.vt == Value.VT.LOCAL) {
+                    if (op.vt == LOCAL) {
                         use((Local) op);
                     }
 
@@ -269,7 +272,7 @@ public class NewTransformer implements Transformer {
                     }
                 }
 
-                if (dist.st == Stmt.ST.LABEL) {
+                if (dist.st == LABEL) {
                     List<AssignStmt> phis = ((LabelStmt) dist).phis;
                     if (phis != null && phis.size() > 0) {
                         for (AssignStmt phi : phis) {
@@ -349,17 +352,13 @@ public class NewTransformer implements Transformer {
         }
     }
 
-    InvokeExpr findInvokeExpr(Stmt p) {
-        InvokeExpr ie = null;
-        if (p.st == Stmt.ST.ASSIGN) {
-            if (p.getOp2().vt == Value.VT.INVOKE_SPECIAL) {
+    InvokeExpr findInvokeExpr(Stmt p, InvokeExpr ie) {
+        if (p.st == ASSIGN) {
+            if (p.getOp2().vt == INVOKE_SPECIAL) {
                 ie = (InvokeExpr) p.getOp2();
             }
-        } else if (p.st == Stmt.ST.VOID_INVOKE && p.getOp().vt == Value.VT.INVOKE_SPECIAL) {
-            Value op = p.getOp();
-            if (op instanceof InvokeExpr) {
-                ie = (InvokeExpr) op;
-            }
+        } else if (p.st == VOID_INVOKE && p.getOp().vt == INVOKE_SPECIAL) {
+            ie = (InvokeExpr) p.getOp();
         }
         return ie;
     }

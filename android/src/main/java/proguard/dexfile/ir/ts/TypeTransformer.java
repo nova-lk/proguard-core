@@ -18,11 +18,11 @@ package proguard.dexfile.ir.ts;
 
 import proguard.dexfile.ir.IrMethod;
 import proguard.dexfile.ir.TypeClass;
+import proguard.dexfile.ir.expr.*;
 import proguard.dexfile.ir.stmt.AssignStmt;
 import proguard.dexfile.ir.stmt.LabelStmt;
 import proguard.dexfile.ir.stmt.Stmt;
 import proguard.dexfile.reader.DexType;
-import proguard.dexfile.ir.expr.*;
 
 import java.util.*;
 
@@ -292,13 +292,14 @@ public class TypeTransformer implements Transformer {
 
             switch (clz) {
                 case ZI:
-                case INT:
-                case IF:
                     return "I";
                 case ZIFL:
                 case ZIF:
                 case ZIL:
                     return "Z";
+                case INT:
+                case IF:
+                    return "I";
                 default:
             }
             throw new RuntimeException();
@@ -330,16 +331,19 @@ public class TypeTransformer implements Transformer {
 
         public boolean addUses(String ele) {
             assert this.next == null;
-            if (this.uses == null) {
-                this.uses = new HashSet<>();
+            TypeRef t = this;
+            if (t.uses != null) {
+                return t.uses.add(ele);
+            } else {
+                t.uses = new LinkedHashSet<>();
+                return t.uses.add(ele);
             }
-            return this.uses.add(ele);
         }
 
         public boolean addAllUses(Set<String> uses) {
             assert this.next == null;
             if (this.uses == null) {
-                this.uses = new HashSet<>();
+                this.uses = new LinkedHashSet<>();
             }
             return this.uses.addAll(uses);
         }
@@ -349,7 +353,7 @@ public class TypeTransformer implements Transformer {
         protected IrMethod method;
         private final List<TypeRef> refs = new ArrayList<>();
 
-        TypeAnalyze(IrMethod method) {
+        public TypeAnalyze(IrMethod method) {
             super();
             this.method = method;
         }
@@ -362,7 +366,7 @@ public class TypeTransformer implements Transformer {
 
         private void fixTypes() {
             // 1. collect all Array Roots
-            Set<TypeRef> arrayRoots = new HashSet<>();
+            Set<TypeRef> arrayRoots = new LinkedHashSet<>();
             for (TypeRef ref : refs) {
                 ref = ref.getReal();
                 if (ref.gArrayValues != null || ref.sArrayValues != null) {
@@ -373,7 +377,7 @@ public class TypeTransformer implements Transformer {
                 mergeArrayRelation(ref, Relation.R_arrayRoots);
             }
 
-            Set<TypeRef> updatedRefs = new HashSet<>();
+            Set<TypeRef> updatedRefs = new LinkedHashSet<>();
             UniqueQueue<TypeRef> q = new UniqueQueue<>();
             q.addAll(refs);
             while (!q.isEmpty()) {
@@ -1012,7 +1016,7 @@ public class TypeTransformer implements Transformer {
         private TypeRef getDefTypeRef(Value v) {
             Object object = v.tag;
             TypeRef typeRef;
-            if (!(object instanceof TypeRef)) {
+            if (object == null || !(object instanceof TypeRef)) {
                 typeRef = new TypeRef(v);
                 refs.add(typeRef);
                 v.tag = typeRef;

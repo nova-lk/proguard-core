@@ -1,8 +1,8 @@
 package proguard.dexfile.reader.node.analysis;
 
 import proguard.dexfile.reader.Method;
-import proguard.dexfile.reader.Proto;
 import proguard.dexfile.reader.Op;
+import proguard.dexfile.reader.Proto;
 import proguard.dexfile.reader.node.insn.*;
 
 import java.util.ArrayList;
@@ -13,7 +13,6 @@ public class DvmFrame<V> {
     public V[] values;
     public V tmp;
 
-    @SuppressWarnings("unchecked")
     public DvmFrame(int totalRegister) {
         values = (V[]) new Object[totalRegister];
     }
@@ -274,12 +273,12 @@ public class DvmFrame<V> {
                 Proto proto = methodStmtNode.getProto();
                 boolean isStatic = false;
                 boolean isRange =
-                        insn.op == Op.INVOKE_VIRTUAL_RANGE ||
-                                insn.op == Op.INVOKE_SUPER_RANGE ||
-                                insn.op == Op.INVOKE_DIRECT_RANGE ||
-                                insn.op == Op.INVOKE_STATIC_RANGE ||
+                        insn.op == Op.INVOKE_VIRTUAL_RANGE   ||
+                                insn.op == Op.INVOKE_SUPER_RANGE     ||
+                                insn.op == Op.INVOKE_DIRECT_RANGE    ||
+                                insn.op == Op.INVOKE_STATIC_RANGE    ||
                                 insn.op == Op.INVOKE_INTERFACE_RANGE ||
-                                insn.op == Op.INVOKE_CUSTOM_RANGE ||
+                                insn.op == Op.INVOKE_CUSTOM_RANGE    ||
                                 insn.op == Op.INVOKE_POLYMORPHIC_RANGE;
 
                 if (insn.op == Op.INVOKE_STATIC || insn.op == Op.INVOKE_STATIC_RANGE) {
@@ -295,7 +294,8 @@ public class DvmFrame<V> {
                     v.add(getReg(methodStmtNode.args[i++]));
                 }
 
-                if (methodStmtNode.args.length != descriptorLength(proto.getParameterTypes()) + (isStatic ? 0 : 1)) {
+                if (methodStmtNode.args.length != descriptorLength(proto.getParameterTypes()) + (isStatic ? 0 : 1))
+                {
                     System.err.println("WARNING: Illegal bytecode: Mismatch between argument count and method signature.");
                     System.err.println("         This may be the result of defining a function with more than 255 parameters.");
                     System.err.println("         For invocation of " + getMethodName(methodStmtNode));
@@ -391,7 +391,7 @@ public class DvmFrame<V> {
                 setTmp(null);
                 break;
             case FILL_ARRAY_DATA:
-                interpreter.unaryOperation(insn, getReg(((FillArrayDataStmtNode) insn).ra));
+                interpreter.unaryOperation(insn,getReg(((FillArrayDataStmtNode)insn).ra));
                 setTmp(null);
                 break;
             case GOTO:
@@ -427,13 +427,13 @@ public class DvmFrame<V> {
 
     private String getMethodName(AbstractMethodStmtNode methodStmtNode) {
         if (methodStmtNode instanceof MethodStmtNode) {
-            Method method = ((MethodStmtNode) methodStmtNode).method;
+            Method method = ((MethodStmtNode)methodStmtNode).method;
             return method.getOwner() + "->" + method.getName();
         } else if (methodStmtNode instanceof MethodCustomStmtNode) {
-            Method method = ((MethodCustomStmtNode) methodStmtNode).bsm.getMethod();
+            Method method = ((MethodCustomStmtNode)methodStmtNode).bsm.getMethod();
             return method.getOwner() + "->" + method.getName();
         } else if (methodStmtNode instanceof MethodPolymorphicStmtNode) {
-            Method method = ((MethodPolymorphicStmtNode) methodStmtNode).method;
+            Method method = ((MethodPolymorphicStmtNode)methodStmtNode).method;
             return method.getOwner() + "->" + method.getName();
         }
         return "Unknown method";

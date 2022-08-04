@@ -21,9 +21,9 @@ import proguard.dexfile.ir.Util;
 import proguard.dexfile.ir.expr.Local;
 import proguard.dexfile.ir.expr.PhiExpr;
 import proguard.dexfile.ir.expr.Value;
+import proguard.dexfile.ir.stmt.*;
 import proguard.dexfile.ir.ts.an.AnalyzeValue;
 import proguard.dexfile.ir.ts.an.BaseAnalyze;
-import proguard.dexfile.ir.stmt.*;
 
 import java.util.*;
 
