@@ -110,6 +110,22 @@ public class IOUtil
 
         classReader = extraDataEntryReader.apply(classReader, classPoolFiller);
 
+//        val dexReader = NameFilteredDataEntryReader(
+//                "classes*.dex",
+//                DexClassReader(
+//                        true,
+//                        classPoolFiller
+//                ),
+//                dataEntryReader
+//        )
+//        NameFilteredDataEntryReader(
+//                "**.smali",
+//                Smali2DexReader(
+//                        (dexReader)
+//                ),
+//                dexReader
+//        )
+
         // Extract files from an archive if necessary.
         classReader =
                 new FilteredDataEntryReader(
