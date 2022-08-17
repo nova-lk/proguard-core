@@ -5,25 +5,23 @@ import proguard.classfile.visitor.ClassNameFilter;
 import proguard.classfile.visitor.ClassPoolFiller;
 import proguard.dexfile.writer.ClassPath;
 import proguard.dexfile.writer.ClassPathEntry;
+import proguard.dexfile.writer.Configuration;
 import proguard.dexfile.writer.DataEntryReaderFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
 
 public class InputReader {
+//
+//    private boolean android;
+//    private final List<Path> programJars;
+//    private final List<Path> libraryJars;
 
-    private boolean android;
-    private final List<Path> programJars;
-    private final List<Path> libraryJars;
+    private final Configuration configuration;
 
 
-    public InputReader (List<Path> programJars, List<Path> libraryJars, boolean android)
+    public InputReader (Configuration configuration)
     {
-        this.android = android;
-        this.programJars = programJars;
-        this.libraryJars = libraryJars;
+        this.configuration = configuration;
     }
 
     public void execute(ClassPool programClassPool, ClassPool libraryClassPool) throws IOException {
@@ -50,24 +48,10 @@ public class InputReader {
                 dexReader
         );
 
-//        for (Path p : programJars) {
-//            File file = new File(p.toUri());
-//
-//            ClassPathEntry classPathEntry = new ClassPathEntry(file, false);
-//
-//            readInput("Reading program ",
-//                    classPathEntry,
-//                    new ClassFilter(classReader, dexReader), true);
-//        }
+        readInput("Reading program ",
+                configuration.programJars,
+                new ClassFilter(classReader, dexReader));
 
-        for (Path p : programJars) {
-
-            Path classPathEntry = p;
-
-            readInput("Reading program ",
-                    classPathEntry,
-                    new ClassFilter(classReader, dexReader), true);
-        }
 
 
 //        for (Path p : libraryJars) {
@@ -95,24 +79,39 @@ public class InputReader {
     }
 
     /**
+     * Reads all input entries from the given class path.
+     */
+    private void readInput(String          messagePrefix,
+                           ClassPath       classPath,
+                           DataEntryReader reader)
+    throws IOException
+    {
+        readInput(messagePrefix,
+                classPath,
+                0,
+                classPath.size(),
+                reader);
+    }
+
+    /**
      * Reads all input entries from the given section of the given class path.
      */
     public void readInput(String          messagePrefix,
-                          List<Path> programJars,
+                          ClassPath       classPath,
                           int             fromIndex,
                           int             toIndex,
                           DataEntryReader reader)
-            throws IOException
+    throws IOException
     {
 
         boolean output = true;
 
         for (int index = fromIndex; index < toIndex; index++)
         {
-            Path entry = programJars.get(index);
-            if (!output)
+            ClassPathEntry entry = classPath.get(index);
+            if (!entry.isOutput())
             {
-                readInput(messagePrefix, entry, reader, true);
+                readInput(messagePrefix, entry, reader);
             }
         }
     }
@@ -121,23 +120,22 @@ public class InputReader {
      * Reads the given input class path entry.
      */
     private void readInput(String messagePrefix,
-                           Path classPathEntry,
-                           DataEntryReader dataEntryReader,
-                           boolean android)
-            throws IOException
+                           ClassPathEntry classPathEntry,
+                           DataEntryReader dataEntryReader)
+    throws IOException
     {
         try
         {
             // Create a reader that can unwrap jars, wars, ears, jmods and zips.
             DataEntryReader reader =
-                    new DataEntryReaderFactory(android)
+                    new DataEntryReaderFactory(configuration.android)
                             .createDataEntryReader(messagePrefix,
                                     classPathEntry,
                                     dataEntryReader);
 
             // Create the data entry source.
             DataEntrySource source =
-                    new DirectorySource(classPathEntry.toFile());
+                    new DirectorySource(classPathEntry.getFile());
 
             // Pump the data entries into the reader.
             source.pumpDataEntries(reader);

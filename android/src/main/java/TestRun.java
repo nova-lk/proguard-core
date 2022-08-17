@@ -2,6 +2,9 @@ import com.android.tools.r8.CompilationFailedException;
 //import com.guardsquare.proguard.tools.Smali2DexReader;
 import proguard.classfile.ClassPool;
 import proguard.classfile.visitor.ClassPrinter;
+import proguard.dexfile.writer.ClassPath;
+import proguard.dexfile.writer.ClassPathEntry;
+import proguard.dexfile.writer.Configuration;
 import proguard.dexfile.writer.DataEntryReaderFactory;
 import proguard.dexfile.writer.DataEntryWriterFactory;
 import proguard.dexfile.writer.DexDataEntryWriter;
@@ -34,32 +37,38 @@ public class TestRun {
         String inputPath = "/home/pramitha/Downloads/app2.apk";
 //        String inputPath = "/home/pramitha/Downloads/SmaliSamples";
 
-        List<Path> programFilePaths = new ArrayList<>();
-        List<Path> libraryClassPaths = new ArrayList<>();
+        File inputFile = new File(inputPath);
 
-        Path filePath = Paths.get(inputPath);
-        programFilePaths.add(filePath);
+        ClassPath programFilePaths = new ClassPath();
+        ClassPath libraryClassPaths = new ClassPath();
+
+        ClassPathEntry inputEntry = new ClassPathEntry(inputFile, false);
+        programFilePaths.add(inputEntry);
 
         ClassPool programClassPool = new ClassPool();
         ClassPool libraryClassPool = new ClassPool();
 
-        new InputReader(programFilePaths, libraryClassPaths, true)
+        Configuration configuration = new Configuration();
+        configuration.programJars = programFilePaths;
+        configuration.libraryJars = libraryClassPaths;
+        configuration.android = true;
+
+
+        new InputReader(configuration)
         .execute(programClassPool, libraryClassPool);
 
 //        libraryClassPool.classesAccept(new ClassPrinter());
 //        programClassPool.classesAccept(new ClassPrinter());
 
-        new OutputWriter(programFilePaths, libraryClassPaths)
-        .execute(programClassPool, libraryClassPool);
+//        new OutputWriter(programFilePaths, libraryClassPaths)
+//        .execute(programClassPool, libraryClassPool);
 
-        File file = new File("/home/pramitha/Downloads/DexOut/output/test.dex");
-
-//        DexDataEntryWriterFactory dexDataEntryWriterFactory = new DexDataEntryWriterFactory(programClassPool, false, null);
-
+        File file = new File("/home/pramitha/Downloads/DexOut/output/");
+//
 //         Create the writer for the main file or directory.
         DataEntryWriter writer = file.isFile() ? new FixedFileWriter(file) : new DirectoryWriter(file);
-
-
+//
+//
         // A dex file can't contain resource files.
         writer =
                 new FilteredDataEntryWriter(

@@ -21,14 +21,8 @@ import proguard.util.StringMatcher;
 public class DexDataEntryWriterFactory
 {
     private final ClassPool           programClassPool;
-//    private final Configuration       configuration;
+    private final Configuration       configuration;
     private final boolean             appBundle;
-//    private final int                 multiDexCount;
-//    private final List                splitDexFiles;
-//    private final String[]            classNameOrder;
-//    private final int                 minSdkVersion;
-//    private final boolean             debuggable;
-//    private final DexVisitor          extraDexVisitor;
     private final DataEntryReader extraDexDataEntryVisitor;
     private final int                 threadCount;
 
@@ -58,21 +52,13 @@ public class DexDataEntryWriterFactory
      *                                 but must not read their contents.
      */
     public DexDataEntryWriterFactory(ClassPool       programClassPool,
+                                     Configuration configuration,
                                      boolean         appBundle,
-//                                     int             multiDexCount,
-//                                     List            splitDexFiles,
-//                                     int             minSdkVersion,
-//                                     boolean         debuggable,
-//                                     String[]        classNameOrder,
                                      DataEntryReader extraDexDataEntryVisitor)
     {
-        this.programClassPool         = programClassPool;
-        this.appBundle                = appBundle;
-//        this.multiDexCount            = multiDexCount;
-//        this.splitDexFiles            = splitDexFiles;
-//        this.classNameOrder           = classNameOrder;
-//        this.minSdkVersion            = minSdkVersion;
-//        this.debuggable               = debuggable;
+        this.programClassPool = programClassPool;
+        this.configuration = configuration;
+        this.appBundle = appBundle;
         this.extraDexDataEntryVisitor = extraDexDataEntryVisitor;
 
         // Get a suitable thread count.

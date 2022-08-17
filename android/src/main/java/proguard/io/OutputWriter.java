@@ -1,40 +1,32 @@
 package proguard.io;
 
 import proguard.classfile.ClassPool;
-import proguard.classfile.Clazz;
-import proguard.classfile.visitor.ClassVisitor;
 import proguard.dexfile.writer.ClassPath;
 import proguard.dexfile.writer.ClassPathEntry;
+import proguard.dexfile.writer.Configuration;
 import proguard.dexfile.writer.DataEntryWriterFactory;
 import proguard.dexfile.writer.DexDataEntryWriterFactory;
-import proguard.util.StringMatcher;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.security.KeyStore;
 import java.util.Date;
 import java.util.List;
 
 public class OutputWriter {
 
-    private boolean android;
-    private final ClassPath programJars;
-    private final ClassPath libraryJars;
+    private final Configuration configuration;
 
-    public OutputWriter(ClassPath programJars, ClassPath libraryJars) {
-        this.programJars = programJars;
-        this.libraryJars = libraryJars;
+    public OutputWriter(Configuration configuration) {
+        this.configuration = configuration;
     }
 
     public void execute(ClassPool programClassPool, ClassPool libraryClassPool) throws IOException {
 
-        DexClassReader extraDexClassReader = new DexClassReader(false, new ClassVisitor() {
-            @Override
-            public void visitAnyClass(Clazz clazz) {
+        ClassPath programJars = configuration.programJars;
 
-            }
-        });
+        // Get the private key from the key store.
+        KeyStore.PrivateKeyEntry[] privateKeyEntries = retrievePrivateKeys(); // null for now
 
         // Convert the current time into DOS date and time.
         Date currentDate = new Date();
@@ -46,28 +38,19 @@ public class OutputWriter {
                         currentDate.getMinutes()     << 5  |
                         currentDate.getSeconds()     >> 1;
 
-        // Get the private key from the key store.
-        KeyStore.PrivateKeyEntry[] privateKeyEntries = retrievePrivateKeys(); // always give null
-
-        // Construct a filter for files that shouldn't be compressed.
-        StringMatcher uncompressedFilter = null;
-//                configuration.dontCompress == null ? null :
-//                        new ListParser(new FileNameParser()).parse(configuration.dontCompress);
-
-        DexDataEntryWriterFactory dexDataEntryWriterFactory = new DexDataEntryWriterFactory(programClassPool, false, null);
 
         // Create a main data entry writer factory for all nested archives.
         DataEntryWriterFactory dataEntryWriterFactory =
                 new DataEntryWriterFactory(
                         programClassPool,
                         true,
-                        dexDataEntryWriterFactory,
-                        uncompressedFilter,
+                        new DexDataEntryWriterFactory(programClassPool, configuration, false, null),
+                        null,
                         1,
                         false,
                         modificationTime,
                         false,
-                        privateKeyEntries,
+                        null,
                         null);
 
         DataEntryWriter extraDataEntryWriter = null;
@@ -94,6 +77,7 @@ public class OutputWriter {
                 {
                     // Write the processed input entries to the output entries.
                     writeOutput(dataEntryWriterFactory,
+                            configuration,
                             programClassPool,
                             extraDataEntryWriter != null ?
                                     // The extraDataEntryWriter must be remain open
@@ -115,7 +99,7 @@ public class OutputWriter {
     }
 
     private KeyStore.PrivateKeyEntry[] retrievePrivateKeys()
-            throws IOException
+    throws IOException
     {
         // Check the signing variables.
         List<File>   keyStoreFiles     = null;
@@ -131,13 +115,14 @@ public class OutputWriter {
      * Transfers the specified input jars to the specified output jars.
      */
     private void writeOutput(DataEntryWriterFactory dataEntryWriterFactory,
+                             Configuration          configuration,
                              ClassPool              programClassPool,
                              DataEntryWriter        extraDataEntryWriter,
                              ClassPath            classPath,
                              int                    fromInputIndex,
                              int                    fromOutputIndex,
                              int                    toOutputIndex)
-            throws IOException
+    throws IOException
     {
         // Debugging tip: your can wrap data entry writers and readers with
         //     new DebugDataEntryWriter("...", ....)
@@ -149,16 +134,15 @@ public class OutputWriter {
             // and directories, cascading over the specified output entries.
             DataEntryWriter writer =
                     dataEntryWriterFactory.createDataEntryWriter(classPath,
-                            fromOutputIndex,
-                            toOutputIndex,
-                            null);
+                                                                 fromOutputIndex,
+                                                                 toOutputIndex,
+                                                                 null);
 
             DataEntryWriter resourceWriter = writer;
 
 
             // By default, just copy resource files into the above writers.
-            DataEntryReader resourceCopier =
-                    new DataEntryCopier(resourceWriter);
+            DataEntryReader resourceCopier = new DataEntryCopier(resourceWriter);
 
             // We're now switching to the reader side, operating on the
             // contents possibly parsed from the input streams.
@@ -167,7 +151,7 @@ public class OutputWriter {
             // Write any kept directories.
             DataEntryReader reader =
                     writeDirectories(
-//                            configuration,
+                            configuration,
                             programClassPool,
                             resourceCopier,
                             resourceRewriter);
@@ -182,8 +166,8 @@ public class OutputWriter {
 
             // Go over the specified input entries and write their processed
             // versions.
-            new InputReader(programJars, libraryJars, android).readInput("  Copying resources from program ",
-                    programJars,
+            new InputReader(configuration).readInput("  Copying resources from program ",
+                    classPath,
                     fromInputIndex,
                     fromOutputIndex,
                     reader);
@@ -193,13 +177,12 @@ public class OutputWriter {
         }
         catch (IOException ex)
         {
-            String message = "Can't write [" + programJars.get(fromOutputIndex).toString() + "] (" + ex.getMessage() + ")";
+            String message = "Can't write [" + classPath.get(fromOutputIndex).getName() + "] (" + ex.getMessage() + ")";
             throw new IOException(message, ex);
         }
     }
 
-    private DirectoryFilter writeDirectories(
-//                                                Configuration   configuration,
+    private DirectoryFilter writeDirectories(Configuration   configuration,
                                              ClassPool       programClassPool,
                                              DataEntryReader directoryCopier,
                                              DataEntryReader fileCopier)
@@ -219,7 +202,6 @@ public class OutputWriter {
 //                                    directoryCopier));
 //        }
 
-        // Filter on directories and files.
         return new DirectoryFilter(directoryRewriter, fileCopier);
     }
 

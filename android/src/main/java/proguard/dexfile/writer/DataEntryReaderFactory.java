@@ -7,8 +7,6 @@
 package proguard.dexfile.writer;
 
 import proguard.classfile.ClassConstants;
-import proguard.dexfile.writer.AndroidConstants;
-import proguard.dexfile.writer.ClassPathEntry;
 import proguard.io.DataEntryNameFilter;
 import proguard.io.DataEntryReader;
 import proguard.io.FilteredDataEntryReader;
@@ -27,7 +25,6 @@ import proguard.util.StringMatcher;
 import proguard.util.WildcardManager;
 
 import java.io.PrintStream;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,7 +67,7 @@ public class DataEntryReaderFactory
      *                       classes and resource files can be delegated.
      * @return a DataEntryReader for reading the given class path entry.
      */
-    public DataEntryReader createDataEntryReader(Path classPathEntry,
+    public DataEntryReader createDataEntryReader(ClassPathEntry classPathEntry,
                                                  DataEntryReader reader)
     {
         return this.createDataEntryReader("", classPathEntry, reader, null);
@@ -86,7 +83,7 @@ public class DataEntryReaderFactory
      * @return a DataEntryReader for reading the given class path entry.
      */
     public DataEntryReader createDataEntryReader(String          messagePrefix,
-                                                 Path  classPathEntry,
+                                                 ClassPathEntry  classPathEntry,
                                                  DataEntryReader reader)
     {
         return this.createDataEntryReader(messagePrefix, classPathEntry, reader, System.out);
@@ -103,51 +100,29 @@ public class DataEntryReaderFactory
      * @return a DataEntryReader for reading the given class path entry.
      */
     public DataEntryReader createDataEntryReader(String          messagePrefix,
-                                                 Path classPathEntry,
+                                                 ClassPathEntry classPathEntry,
                                                  DataEntryReader reader,
                                                  PrintStream     out)
     {
-//        boolean isDex  = classPathEntry.isDex();
-//        boolean isApk  = classPathEntry.isApk();
-//        boolean isAab  = classPathEntry.isAab();
-//        boolean isJar  = classPathEntry.isJar();
-//        boolean isAar  = classPathEntry.isAar();
-//        boolean isWar  = classPathEntry.isWar();
-//        boolean isEar  = classPathEntry.isEar();
-//        boolean isJmod = classPathEntry.isJmod();
-//        boolean isZip  = classPathEntry.isZip();
+        boolean isDex  = classPathEntry.isDex();
+        boolean isApk  = classPathEntry.isApk();
+        boolean isAab  = classPathEntry.isAab();
+        boolean isJar  = classPathEntry.isJar();
+        boolean isAar  = classPathEntry.isAar();
+        boolean isWar  = classPathEntry.isWar();
+        boolean isEar  = classPathEntry.isEar();
+        boolean isJmod = classPathEntry.isJmod();
+        boolean isZip  = classPathEntry.isZip();
 
-        boolean isDex  = classPathEntry.toString().toLowerCase().endsWith(".dex");
-        boolean isApk  = classPathEntry.toString().toLowerCase().endsWith(".apk") || classPathEntry.toString().toLowerCase().endsWith(".ap_");
-        boolean isAab  = classPathEntry.toString().toLowerCase().endsWith(".aab");
-        boolean isJar  = classPathEntry.toString().toLowerCase().endsWith(".jar");
-        boolean isAar  = classPathEntry.toString().toLowerCase().endsWith(".aar");
-        boolean isWar  = classPathEntry.toString().toLowerCase().endsWith(".war");
-        boolean isEar  = classPathEntry.toString().toLowerCase().endsWith(".ear");
-        boolean isJmod = classPathEntry.toString().toLowerCase().endsWith(".jmod");
-        boolean isZip  = classPathEntry.toString().toLowerCase().endsWith(".zip");
-
-
-//        List filter     = getFilterExcludingVersionedClasses(classPathEntry);
-//        List apkFilter  = classPathEntry.getApkFilter();
-//        List aabFilter  = classPathEntry.getAabFilter();
-//        List jarFilter  = classPathEntry.getJarFilter();
-//        List aarFilter  = classPathEntry.getAarFilter();
-//        List warFilter  = classPathEntry.getWarFilter();
-//        List earFilter  = classPathEntry.getEarFilter();
-//        List jmodFilter = classPathEntry.getJmodFilter();
-//        List zipFilter  = classPathEntry.getZipFilter();
-
-        List filter     = null;
-        List apkFilter  = null;
-        List aabFilter  = null;
-        List jarFilter  = null;
-        List aarFilter  = null;
-        List warFilter  = null;
-        List earFilter  = null;
-        List jmodFilter = null;
-        List zipFilter  = null;
-
+        List filter     = getFilterExcludingVersionedClasses(classPathEntry);
+        List apkFilter  = classPathEntry.getApkFilter();
+        List aabFilter  = classPathEntry.getAabFilter();
+        List jarFilter  = classPathEntry.getJarFilter();
+        List aarFilter  = classPathEntry.getAarFilter();
+        List warFilter  = classPathEntry.getWarFilter();
+        List earFilter  = classPathEntry.getEarFilter();
+        List jmodFilter = classPathEntry.getJmodFilter();
+        List zipFilter  = classPathEntry.getZipFilter();
 
         if (out != null)
         {

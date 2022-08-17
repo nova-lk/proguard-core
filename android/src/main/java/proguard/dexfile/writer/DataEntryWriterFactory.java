@@ -35,7 +35,6 @@ import proguard.util.StringMatcher;
 import proguard.util.WildcardManager;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.List;
@@ -187,7 +186,7 @@ public class DataEntryWriterFactory
      * @param extraDataEntryWriter a writer to which extra injected files can be written.
      * @return a DataEntryWriter for writing to the given class path entries.
      */
-    public DataEntryWriter createDataEntryWriter(List<Path> programJars,
+    public DataEntryWriter createDataEntryWriter(ClassPath classPath,
                                                  int             fromIndex,
                                                  int             toIndex,
                                                  DataEntryWriter extraDataEntryWriter)
@@ -197,14 +196,14 @@ public class DataEntryWriterFactory
         // Create a chain of writers, one for each class path entry.
         for (int index = toIndex - 1; index >= fromIndex; index--)
         {
-            Path entry = programJars.get(index);
+            ClassPathEntry entry = classPath.get(index);
 
             // We're allowing the same output file to be specified multiple
             // times in the class path. We only add a control manifest for
             // the input of the first occurrence.
             boolean addCheckingJarWriter =
                 !outputFileOccurs(entry,
-                        programJars,
+                                  classPath,
                                   0,
                                   index);
 
@@ -213,9 +212,9 @@ public class DataEntryWriterFactory
             // for this entry if its file doesn't occur again later on.
             boolean closeCachedJarWriter =
                 !outputFileOccurs(entry,
-                        programJars,
+                        classPath,
                                   index + 1,
-                        programJars.size());
+                        classPath.size());
 
             writer = createClassPathEntryWriter(entry,
                                                 writer,
@@ -228,27 +227,19 @@ public class DataEntryWriterFactory
     }
 
 
-    private boolean outputFileOccurs(Path entry,
-                                     List<Path>      programJars,
+    private boolean outputFileOccurs(ClassPathEntry entry,
+                                     ClassPath      classPath,
                                      int            startIndex,
                                      int            endIndex)
     {
-        File file = entry.toFile();
-
-        boolean output = true;
+        File file = entry.getFile();
 
         for (int index = startIndex; index < endIndex; index++)
         {
-            Path classPathEntry = programJars.get(index);
+            ClassPathEntry classPathEntry = classPath.get(index);
 
-            // Fixme
-//            if (classPathEntry.isOutput() &&
-//                classPathEntry.toFile().equals(file))
-//            {
-//                return true;
-//            }
-
-            if (output && classPathEntry.toFile().equals(file))
+            if (classPathEntry.isOutput() &&
+                classPathEntry.getFile().equals(file))
             {
                 return true;
             }
@@ -262,46 +253,35 @@ public class DataEntryWriterFactory
      * Creates a DataEntryWriter that can write to the given class path entry,
      * or delegate to another DataEntryWriter if its filters don't match.
      */
-    private DataEntryWriter createClassPathEntryWriter(Path  classPathEntry,
+    private DataEntryWriter createClassPathEntryWriter(ClassPathEntry  classPathEntry,
                                                        DataEntryWriter alternativeWriter,
                                                        DataEntryWriter extraDataEntryWriter,
                                                        boolean         addCheckingJarWriter,
                                                        boolean         closeCachedJarWriter)
     {
-        File file = classPathEntry.toFile();
+        File file = classPathEntry.getFile();
 
-        boolean isDex  = classPathEntry.toString().toLowerCase().endsWith(".dex");
-        boolean isApk  = classPathEntry.toString().toLowerCase().endsWith(".apk") || classPathEntry.toString().toLowerCase().endsWith(".ap_");
-        boolean isAab  = classPathEntry.toString().toLowerCase().endsWith(".aab");
-        boolean isJar  = classPathEntry.toString().toLowerCase().endsWith(".jar");
-        boolean isAar  = classPathEntry.toString().toLowerCase().endsWith(".aar");
-        boolean isWar  = classPathEntry.toString().toLowerCase().endsWith(".war");
-        boolean isEar  = classPathEntry.toString().toLowerCase().endsWith(".ear");
-        boolean isJmod = classPathEntry.toString().toLowerCase().endsWith(".jmod");
-        boolean isZip  = classPathEntry.toString().toLowerCase().endsWith(".zip");
+        boolean isDex  = classPathEntry.isDex();
+        boolean isApk  = classPathEntry.isApk();
+        boolean isAab  = classPathEntry.isAab();
+        boolean isJar  = classPathEntry.isJar();
+        boolean isAar  = classPathEntry.isAar();
+        boolean isWar  = classPathEntry.isWar();
+        boolean isEar  = classPathEntry.isEar();
+        boolean isJmod = classPathEntry.isJmod();
+        boolean isZip  = classPathEntry.isZip();
 
         boolean isFile = isDex || isApk || isAab || isJar || isAar || isWar || isEar || isJmod || isZip;
 
-        // Fixme
-//        List filter     = getFilterExcludingVersionedClasses(classPathEntry);
-//        List apkFilter  = classPathEntry.getApkFilter();
-//        List aabFilter  = classPathEntry.getAabFilter();
-//        List jarFilter  = classPathEntry.getJarFilter();
-//        List aarFilter  = classPathEntry.getAarFilter();
-//        List warFilter  = classPathEntry.getWarFilter();
-//        List earFilter  = classPathEntry.getEarFilter();
-//        List jmodFilter = classPathEntry.getJmodFilter();
-//        List zipFilter  = classPathEntry.getZipFilter();
-
-        List filter     = null;
-        List apkFilter  = null;
-        List aabFilter  = null;
-        List jarFilter  = null;
-        List aarFilter  = null;
-        List warFilter  = null;
-        List earFilter  = null;
-        List jmodFilter = null;
-        List zipFilter  = null;
+        List filter     = DataEntryReaderFactory.getFilterExcludingVersionedClasses(classPathEntry);
+        List apkFilter  = classPathEntry.getApkFilter();
+        List aabFilter  = classPathEntry.getAabFilter();
+        List jarFilter  = classPathEntry.getJarFilter();
+        List aarFilter  = classPathEntry.getAarFilter();
+        List warFilter  = classPathEntry.getWarFilter();
+        List earFilter  = classPathEntry.getEarFilter();
+        List jmodFilter = classPathEntry.getJmodFilter();
+        List zipFilter  = classPathEntry.getZipFilter();
 
         System.out.println("Preparing " +
                            (isDex || privateKeyEntries == null ? "" : "signed ") +
@@ -316,7 +296,7 @@ public class DataEntryWriterFactory
                             isJmod ? "jmod" :
                             isZip  ? "zip"  :
                                      "directory") +
-                           " [" + classPathEntry.toString() + "]" +
+                           " [" + classPathEntry.getName() + "]" +
                            (filter     != null ||
                             apkFilter  != null ||
                             aabFilter  != null ||
