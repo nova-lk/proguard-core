@@ -98,10 +98,10 @@ public class DexDataEntryWriterFactory
         // Wrap in a writer for the only classes.dex file.
         otherWriter = wrapInDexWriter(appBundle ?
                                           AndroidConstants.AAB_BASE + AndroidConstants.AAB_DEX_INFIX :
-                                          "test",
+                                          "",
                                       appBundle ?
                                           AndroidConstants.AAB_BASE + AndroidConstants.AAB_ROOT_INFIX :
-                                          "test",
+                                          "",
                                       dexWriter,
                                       otherWriter);
 

@@ -1,5 +1,6 @@
 package proguard.io;
 
+import kotlinx.metadata.KmClassifier;
 import proguard.classfile.ClassPool;
 import proguard.classfile.visitor.ClassNameFilter;
 import proguard.classfile.visitor.ClassPoolFiller;
@@ -11,13 +12,8 @@ import proguard.dexfile.writer.DataEntryReaderFactory;
 import java.io.IOException;
 
 public class InputReader {
-//
-//    private boolean android;
-//    private final List<Path> programJars;
-//    private final List<Path> libraryJars;
 
     private final Configuration configuration;
-
 
     public InputReader (Configuration configuration)
     {
@@ -30,51 +26,56 @@ public class InputReader {
         ClassPoolFiller libraryClassPoolFiller = new ClassPoolFiller(libraryClassPool);
 
         DataEntryReader classReader =
-                new ClassReader(false, false, false, false, null,
-                        new ClassNameFilter("**",
-                                programClassPoolFiller));
+                new ClassReader(false,
+                        false,
+                        false,
+                        false,
+                        null,
+                        new ClassNameFilter(
+                                "**",
+                                programClassPoolFiller
+                        )
+                );
 
-        DataEntryReader dexReader = new NameFilteredDataEntryReader(
-                "classes*.dex",
-                new DexClassReader(
-                        true,
-                        programClassPoolFiller
-                )
-        );
+        DataEntryReader dexReader =
+                new NameFilteredDataEntryReader(
+                        "classes*.dex",
+                        new DexClassReader(
+                                true,
+                                programClassPoolFiller
+                        )
+                );
 
-        dexReader = new NameFilteredDataEntryReader(
-                "**.smali",
-                new Smali2DexReader(dexReader),
-                dexReader
-        );
+        dexReader =
+                new NameFilteredDataEntryReader(
+                        "**.smali",
+                        new Smali2DexReader(dexReader),
+                        dexReader
+                );
 
         readInput("Reading program ",
                 configuration.programJars,
                 new ClassFilter(classReader, dexReader));
 
+        if (configuration.libraryJars != null)
+        {
+            readInput("Reading library ",
+                    configuration.libraryJars,
+                    new ClassFilter(
+                            new ClassReader(
+                                    true,
+                                    false,
+                                    false,
+                                    false,
+                                    null,
+                                    new ClassNameFilter(
+                                            "**",
+                                            libraryClassPoolFiller
+                                    )
 
-
-//        for (Path p : libraryJars) {
-//            File file = new File(p.toUri());
-//
-//            ClassPathEntry classPathEntry = new ClassPathEntry(file, false);
-//
-//            // Library
-//        readInput("Reading library ",
-//                classPathEntry,
-//                new ClassFilter(new ClassReader(true, false, false, false, null,
-//                        new ClassNameFilter("**",
-//                                libraryClassPoolFiller)),
-//                        new NameFilteredDataEntryReader(
-//                                "classes*.dex",
-//                                new DexClassReader(
-//                                        true,
-//                                        libraryClassPoolFiller
-//                                ),
-//                                classReader
-//                        )), true);
-//        }
-
+                            )
+                    ));
+        }
 
     }
 
@@ -103,9 +104,6 @@ public class InputReader {
                           DataEntryReader reader)
     throws IOException
     {
-
-        boolean output = true;
-
         for (int index = fromIndex; index < toIndex; index++)
         {
             ClassPathEntry entry = classPath.get(index);
@@ -130,8 +128,8 @@ public class InputReader {
             DataEntryReader reader =
                     new DataEntryReaderFactory(configuration.android)
                             .createDataEntryReader(messagePrefix,
-                                    classPathEntry,
-                                    dataEntryReader);
+                                                   classPathEntry,
+                                                   dataEntryReader);
 
             // Create the data entry source.
             DataEntrySource source =

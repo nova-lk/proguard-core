@@ -34,16 +34,17 @@ public class TestRun {
     public static void main(String[] args) throws CompilationFailedException, IOException {
 
 //        String inputPath = "/home/pramitha/Downloads/classes.dex";
-        String inputPath = "/home/pramitha/Downloads/app2.apk";
+//        String inputPath = "/home/pramitha/Downloads/app2.apk";
 //        String inputPath = "/home/pramitha/Downloads/SmaliSamples";
 
-        File inputFile = new File(inputPath);
+        File inputFile = new File("/home/pramitha/Downloads/app1.apk");
+        File outputFile = new File("/home/pramitha/Downloads/DexOut/output/");
 
         ClassPath programFilePaths = new ClassPath();
         ClassPath libraryClassPaths = new ClassPath();
 
-        ClassPathEntry inputEntry = new ClassPathEntry(inputFile, false);
-        programFilePaths.add(inputEntry);
+        programFilePaths.add(new ClassPathEntry(inputFile, false));
+        programFilePaths.add(new ClassPathEntry(outputFile, true));
 
         ClassPool programClassPool = new ClassPool();
         ClassPool libraryClassPool = new ClassPool();
@@ -53,22 +54,22 @@ public class TestRun {
         configuration.libraryJars = libraryClassPaths;
         configuration.android = true;
 
-
         new InputReader(configuration)
         .execute(programClassPool, libraryClassPool);
 
 //        libraryClassPool.classesAccept(new ClassPrinter());
 //        programClassPool.classesAccept(new ClassPrinter());
+        programClassPool.removeClass("com.example.MyClass");
 
-//        new OutputWriter(programFilePaths, libraryClassPaths)
+
+//        new OutputWriter(configuration)
 //        .execute(programClassPool, libraryClassPool);
+//
 
-        File file = new File("/home/pramitha/Downloads/DexOut/output/");
+        // Create the writer for the main file or directory.
+        DataEntryWriter writer = outputFile.isFile() ? new FixedFileWriter(outputFile) : new DirectoryWriter(outputFile);
 //
-//         Create the writer for the main file or directory.
-        DataEntryWriter writer = file.isFile() ? new FixedFileWriter(file) : new DirectoryWriter(file);
-//
-//
+////
         // A dex file can't contain resource files.
         writer =
                 new FilteredDataEntryWriter(

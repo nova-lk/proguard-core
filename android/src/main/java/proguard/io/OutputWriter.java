@@ -6,6 +6,7 @@ import proguard.dexfile.writer.ClassPathEntry;
 import proguard.dexfile.writer.Configuration;
 import proguard.dexfile.writer.DataEntryWriterFactory;
 import proguard.dexfile.writer.DexDataEntryWriterFactory;
+import proguard.util.ExtensionMatcher;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,10 +45,14 @@ public class OutputWriter {
                 new DataEntryWriterFactory(
                         programClassPool,
                         true,
-                        new DexDataEntryWriterFactory(programClassPool, configuration, false, null),
+                        new DexDataEntryWriterFactory(
+                                programClassPool,
+                                configuration,
+                                true,
+                                null),
                         null,
                         1,
-                        false,
+                        configuration.android,
                         modificationTime,
                         false,
                         null,
@@ -96,6 +101,11 @@ public class OutputWriter {
             }
         }
 
+        if (extraDataEntryWriter != null)
+        {
+            extraDataEntryWriter.close();
+        }
+
     }
 
     private KeyStore.PrivateKeyEntry[] retrievePrivateKeys()
@@ -118,7 +128,7 @@ public class OutputWriter {
                              Configuration          configuration,
                              ClassPool              programClassPool,
                              DataEntryWriter        extraDataEntryWriter,
-                             ClassPath            classPath,
+                             ClassPath              classPath,
                              int                    fromInputIndex,
                              int                    fromOutputIndex,
                              int                    toOutputIndex)
@@ -138,11 +148,15 @@ public class OutputWriter {
                                                                  toOutputIndex,
                                                                  null);
 
-            DataEntryWriter resourceWriter = writer;
-
+            writer = new ZipWriter(null,
+                    1,
+                    false,
+                    0,
+                    new byte[0],
+                    writer);
 
             // By default, just copy resource files into the above writers.
-            DataEntryReader resourceCopier = new DataEntryCopier(resourceWriter);
+            DataEntryReader resourceCopier = new DataEntryCopier(writer);
 
             // We're now switching to the reader side, operating on the
             // contents possibly parsed from the input streams.
