@@ -1,12 +1,17 @@
 package proguard.io;
 
+import com.android.tools.r8.internal.Cl;
 import proguard.classfile.ClassPool;
+import proguard.classfile.Clazz;
+import proguard.classfile.ProgramClass;
+import proguard.classfile.editor.InterfaceDeleter;
+import proguard.classfile.visitor.ClassPoolFiller;
+import proguard.classfile.visitor.ClassVisitor;
 import proguard.dexfile.writer.ClassPath;
 import proguard.dexfile.writer.ClassPathEntry;
 import proguard.dexfile.writer.Configuration;
 import proguard.dexfile.writer.DataEntryWriterFactory;
 import proguard.dexfile.writer.DexDataEntryWriterFactory;
-import proguard.util.ExtensionMatcher;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +53,7 @@ public class OutputWriter {
                         new DexDataEntryWriterFactory(
                                 programClassPool,
                                 configuration,
-                                true,
+                                false,
                                 null),
                         null,
                         1,
@@ -148,15 +153,9 @@ public class OutputWriter {
                                                                  toOutputIndex,
                                                                  null);
 
-            writer = new ZipWriter(null,
-                    1,
-                    false,
-                    0,
-                    new byte[0],
-                    writer);
-
             // By default, just copy resource files into the above writers.
             DataEntryReader resourceCopier = new DataEntryCopier(writer);
+
 
             // We're now switching to the reader side, operating on the
             // contents possibly parsed from the input streams.
@@ -173,10 +172,29 @@ public class OutputWriter {
             // Write classes.
             DataEntryReader classReader = new ClassFilter(new IdleRewriter(writer), reader);
 
-            // Write classes attached as extra data entries.
-            DataEntryReader extraClassReader = extraDataEntryWriter != null ?
-                    new ClassFilter(new IdleRewriter(extraDataEntryWriter), reader) :
-                    classReader;
+//            // Write classes attached as extra data entries.
+//            DataEntryReader extraClassReader = extraDataEntryWriter != null ?
+//                    new ClassFilter(new IdleRewriter(extraDataEntryWriter), reader) :
+//                    classReader;
+//
+            reader =
+                    new NameFilteredDataEntryReader(
+                            "classes*.dex",
+                            new DataEntryReader() {
+                                @Override
+                                public void read(DataEntry dataEntry) throws IOException {
+                                    ClassPool classPool = new ClassPool();
+                                    new DexClassReader(false, new ClassPoolFiller(classPool)).read(dataEntry);
+                                    for (Clazz programClass : classPool.classes())
+                                    {
+                                        classReader.read(new RenamedDataEntry(dataEntry, programClass.getName() + ".class"));
+                                    }
+                                }
+                            },
+                            classReader
+                    );
+
+
 
             // Go over the specified input entries and write their processed
             // versions.

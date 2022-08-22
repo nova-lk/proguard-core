@@ -6,11 +6,21 @@
  */
 package proguard.dexfile.writer;
 
+import proguard.classfile.ClassConstants;
 import proguard.classfile.ClassPool;
+import proguard.io.DataEntryClassWriter;
 import proguard.io.DataEntryReader;
 import proguard.io.DataEntryWriter;
+import proguard.io.FilteredDataEntryWriter;
+import proguard.io.NameFilteredDataEntryWriter;
 import proguard.io.NonClosingDataEntryWriter;
+import proguard.util.EmptyStringMatcher;
+import proguard.util.FixedStringMatcher;
 import proguard.util.StringMatcher;
+import proguard.util.SuffixRemovingStringFunction;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This class can create DataEntryWriter instances for writing dex files.
@@ -94,22 +104,86 @@ public class DexDataEntryWriterFactory
     private DataEntryWriter wrapInDexWriter(DataEntryWriter dexWriter,
                                             DataEntryWriter otherWriter)
     {
+//
+//        // Wrap in a writer for the only classes.dex file.
+//        otherWriter = wrapInDexWriter(appBundle ?
+//                                          AndroidConstants.AAB_BASE + AndroidConstants.AAB_DEX_INFIX :
+//                                          "",
+//                                      appBundle ?
+//                                          AndroidConstants.AAB_BASE + AndroidConstants.AAB_ROOT_INFIX :
+//                                          "",
+//                                      dexWriter,
+//                                      otherWriter);
 
-        // Wrap in a writer for the only classes.dex file.
-        otherWriter = wrapInDexWriter(appBundle ?
-                                          AndroidConstants.AAB_BASE + AndroidConstants.AAB_DEX_INFIX :
-                                          "",
-                                      appBundle ?
-                                          AndroidConstants.AAB_BASE + AndroidConstants.AAB_ROOT_INFIX :
-                                          "",
-                                      dexWriter,
-                                      otherWriter);
+
+        // Collect all unique feature names.
+        Set<String> featureNames = new HashSet<>();
+        programClassPool.classesAccept(new ClassFeatureNameCollector(featureNames));
 
 
+        if (featureNames.isEmpty())
+        {
+            // Wrap in a writer for the only classes.dex file.
+            otherWriter = wrapInDexWriter(appBundle ?
+                            AndroidConstants.AAB_BASE + AndroidConstants.AAB_DEX_INFIX :
+                            "",
+                    appBundle ?
+                            AndroidConstants.AAB_BASE + AndroidConstants.AAB_ROOT_INFIX :
+                            "",
+                    dexWriter,
+                    otherWriter);
+        }
+        else
+        {
+            // Start with wrapping in a writer for the basic classes.dex
+            // file.
+            otherWriter = wrapInDexWriter(AndroidConstants.AAB_BASE + AndroidConstants.AAB_DEX_INFIX,
+                                          AndroidConstants.AAB_BASE + AndroidConstants.AAB_ROOT_INFIX,
+                                          dexWriter,
+                                          otherWriter);
+
+           // Don't close the writer for dex files from enclosing writers.
+//            dexWriter = new NonClosingDataEntryWriter(dexWriter);
+
+//            // Wrap with writers for any features.
+//            for(String featureName : featureNames)
+//            {
+//                otherWriter = wrapInFeatureDexWriter(featureName,
+//                        dexWriter,
+//                        otherWriter);
+//
+//            }
+        }
 
         return otherWriter;
     }
 
+//    /**
+//     * Wraps the given data entry writers in dex data entry writers for
+//     * "feature/dex/classes.dex", etc, for the given feature, supporting
+//     * multidex and split dex files.
+//     * @param featureName the feature name that can be used to filter classes
+//     *                    and name dex files.
+//     * @param dexWriter   the data entry writer to which dex files can be
+//     *                    written.
+//     * @param otherWriter the data entry writer to which all other files
+//     *                    can be written.
+//     */
+//    private DataEntryWriter wrapInFeatureDexWriter(String          featureName,
+//                                                   DataEntryWriter dexWriter,
+//                                                   DataEntryWriter otherWriter)
+//    {
+//        return
+//                new NameFilteredDataEntryWriter(
+//                        new TransformedStringMatcher(new SuffixRemovingStringFunction(ClassConstants.CLASS_FILE_EXTENSION),
+//                                new TransformedStringMatcher(new ClassPoolFeatureNameFunction(programClassPool, AndroidConstants.AAB_BASE),
+//                                        new FixedStringMatcher(featureName, new EmptyStringMatcher()))),
+//                        wrapInDexWriter(featureName + AndroidConstants.AAB_DEX_INFIX,
+//                                featureName + AndroidConstants.AAB_ROOT_INFIX,
+//                                dexWriter,
+//                                otherWriter),
+//                        otherWriter);
+//    }
 
 
     /**
@@ -134,8 +208,8 @@ public class DexDataEntryWriterFactory
                                             dexWriter,
                                             otherWriter);
 
-        // Don't close the writer for dex files from enclosing writers.
-        dexWriter = new NonClosingDataEntryWriter(dexWriter);
+//        // Don't close the writer for dex files from enclosing writers.
+        dexWriter = new NonClosingDataEntryWriter(otherWriter);
 
         // Wrap with writers for any multidex files.
         // The Android runtime and util classes will load them eagerly.
@@ -166,8 +240,7 @@ public class DexDataEntryWriterFactory
 ////                                                   index);
 ////            }
 //        }
-
-        return otherWriter;
+        return dexWriter;
     }
 
 
@@ -185,11 +258,14 @@ public class DexDataEntryWriterFactory
 
         // Add a writer for the base dex file.
         // TODO: Don't force empty dex files for features in app bundles, but put hasCode="false" in their manifest files.
+
         return createDataEntryWriter(null,
                                      dexFileName,
                                      true,
                                      dexWriter,
                                      otherWriter);
+
+
     }
 
 

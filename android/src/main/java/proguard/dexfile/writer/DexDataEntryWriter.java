@@ -15,6 +15,7 @@ import proguard.io.DataEntryWriter;
 import proguard.io.IdleRewriter;
 import proguard.io.RenamedDataEntry;
 
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -121,12 +122,12 @@ public class DexDataEntryWriter implements DataEntryWriter
             };
         }
 
-//        // It's not a class entry. Do we always want a dex file?
-//        else if (forceDex)
-//        {
-//            // Make sure we at least have an empty dex file.
-//            setUp(dataEntry);
-//        }
+        // It's not a class entry. Do we always want a dex file?
+        else if (forceDex)
+        {
+            // Make sure we at least have an empty dex file.
+            setUp(dataEntry);
+        }
 
         // Delegate for other class entries and resource entries.
         return otherDataEntryWriter.createOutputStream(dataEntry);

@@ -10,6 +10,7 @@ import proguard.classfile.ClassConstants;
 import proguard.classfile.ClassPool;
 import proguard.io.CascadingDataEntryWriter;
 import proguard.io.ClassDataEntryWriter;
+import proguard.io.DataEntryClassWriter;
 import proguard.io.DataEntryNameFilter;
 import proguard.io.DataEntryParentFilter;
 import proguard.io.DataEntryWriter;
@@ -22,6 +23,7 @@ import proguard.io.NonClosingDataEntryWriter;
 import proguard.io.ParentDataEntryWriter;
 import proguard.io.PrefixAddingDataEntryWriter;
 import proguard.io.RenamedDataEntryWriter;
+import proguard.io.SignedJarWriter;
 import proguard.io.ZipWriter;
 import proguard.util.CollectionMatcher;
 import proguard.util.ConstantStringFunction;
@@ -29,6 +31,7 @@ import proguard.util.ExtensionMatcher;
 import proguard.util.FileNameParser;
 import proguard.util.ListFunctionParser;
 import proguard.util.ListParser;
+import proguard.util.PrefixRemovingStringFunction;
 import proguard.util.SingleFunctionParser;
 import proguard.util.StringFunction;
 import proguard.util.StringMatcher;
@@ -92,7 +95,6 @@ public class DataEntryWriterFactory
     private final boolean                       dalvik;
 //    private final int                           minSdkVersion;
 //    private final int                           maxSdkVersion;
-//    private final FeatureDataEntryWriterFactory featureDataEntryWriterFactory;
     private final DexDataEntryWriterFactory     dexDataEntryWriterFactory;
 //    private final StringMatcher                 splitDimensionFilter;
     private final StringMatcher                 uncompressedFilter;
@@ -147,32 +149,22 @@ public class DataEntryWriterFactory
                                   boolean                       dalvik,
                                   DexDataEntryWriterFactory     dexDataEntryWriterFactory,
                                   StringMatcher                 uncompressedFilter,
-//                                  List<String>                  uncompressedGlobs,
-//                                  boolean                       bundleUncompressNativeLibraries,
-//                                  boolean                       bundleUncompressDexFiles,
                                   int                           uncompressedAlignment,
                                   boolean                       pageAlignNativeLibs,
                                   int                           modificationTime,
                                   boolean                       obfuscate,
                                   KeyStore.PrivateKeyEntry[]    privateKeyEntries,
-//                                  File                          certificateLineage,
-//                                  StringMatcher                 apkSignatureSchemeFilter,
                                   Set<String>                   checkedFileNames)
     {
         this.programClassPool                = programClassPool;
         this.dalvik                          = dalvik;
         this.dexDataEntryWriterFactory       = dexDataEntryWriterFactory;
         this.uncompressedFilter              = uncompressedFilter;
-//        this.uncompressedGlobs               = uncompressedGlobs;
-//        this.bundleUncompressNativeLibraries = bundleUncompressNativeLibraries;
-//        this.bundleUncompressDexFiles        = bundleUncompressDexFiles;
         this.uncompressedAlignment           = uncompressedAlignment;
         this.pageAlignNativeLibs             = pageAlignNativeLibs;
         this.modificationTime                = modificationTime;
         this.obfuscate                       = obfuscate;
         this.privateKeyEntries               = privateKeyEntries;
-//        this.certificateLineage              = certificateLineage;
-//        this.apkSignatureSchemeFilter        = apkSignatureSchemeFilter;
         this.checkedFileNames                = checkedFileNames;
     }
 
@@ -237,7 +229,6 @@ public class DataEntryWriterFactory
         for (int index = startIndex; index < endIndex; index++)
         {
             ClassPathEntry classPathEntry = classPath.get(index);
-
             if (classPathEntry.isOutput() &&
                 classPathEntry.getFile().equals(file))
             {
@@ -273,15 +264,15 @@ public class DataEntryWriterFactory
 
         boolean isFile = isDex || isApk || isAab || isJar || isAar || isWar || isEar || isJmod || isZip;
 
-        List filter     = DataEntryReaderFactory.getFilterExcludingVersionedClasses(classPathEntry);
-        List apkFilter  = classPathEntry.getApkFilter();
-        List aabFilter  = classPathEntry.getAabFilter();
-        List jarFilter  = classPathEntry.getJarFilter();
-        List aarFilter  = classPathEntry.getAarFilter();
-        List warFilter  = classPathEntry.getWarFilter();
-        List earFilter  = classPathEntry.getEarFilter();
-        List jmodFilter = classPathEntry.getJmodFilter();
-        List zipFilter  = classPathEntry.getZipFilter();
+        List<String> filter     = DataEntryReaderFactory.getFilterExcludingVersionedClasses(classPathEntry);
+        List<String> apkFilter  = classPathEntry.getApkFilter();
+        List<String> aabFilter  = classPathEntry.getAabFilter();
+        List<String> jarFilter  = classPathEntry.getJarFilter();
+        List<String> aarFilter  = classPathEntry.getAarFilter();
+        List<String> warFilter  = classPathEntry.getWarFilter();
+        List<String> earFilter  = classPathEntry.getEarFilter();
+        List<String> jmodFilter = classPathEntry.getJmodFilter();
+        List<String> zipFilter  = classPathEntry.getZipFilter();
 
         System.out.println("Preparing " +
                            (isDex || privateKeyEntries == null ? "" : "signed ") +
@@ -336,11 +327,11 @@ public class DataEntryWriterFactory
             boolean flattenZips  = flattenJmods || isJmod;
 
             // Set up the filtered jar writers.
-            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenZips,  isZip, ".zip",  zipFilter,  null,        false, null);
-            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenJmods, isJmod,  ".jmod", jmodFilter, JMOD_HEADER, false, JMOD_PREFIXES);
-            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenEars,  isEar,  ".ear",  earFilter,  null,        false, null);
-            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenWars,  isWar,   ".war",  warFilter,  null,        false, WAR_PREFIXES);
-            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenAars,  isAar,   ".aar",  aarFilter,  null,        false, null);
+            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenZips,  isZip, false, ".zip",  zipFilter,  null,        false, null);
+            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenJmods, isJmod, false, ".jmod", jmodFilter, JMOD_HEADER, false, JMOD_PREFIXES);
+            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenEars,  isEar, false, ".ear",  earFilter,  null,        false, null);
+            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenWars,  isWar, false, ".war",  warFilter,  null,        false, WAR_PREFIXES);
+            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenAars,  isAar, false, ".aar",  aarFilter,  null,        false, null);
 
             if (isAar)
             {
@@ -374,12 +365,12 @@ public class DataEntryWriterFactory
                 }
             }
 
-            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenJars,  isJar, ".jar",  jarFilter,  null, false, null);
+            writer = wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenJars,  isJar, false,  ".jar",  jarFilter,  null, false, null);
 
             // Either we create an aab or apk; they can not be nested.
-//            writer = isAab ?
-//                wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenAabs, isAab, true,  ".aab", aabFilter, null, false,               null) :
-//                wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenApks, isApk, false, ".apk", apkFilter, null, pageAlignNativeLibs, null);
+            writer = isAab ?
+                wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenAabs, isAab,  true, ".aab", aabFilter, null, false, null) :
+                wrapInJarWriter(file, writer, extraDataEntryWriter, closeCachedJarWriter, flattenApks, isApk, false, ".apk", apkFilter, null, pageAlignNativeLibs, null);
 
             // Create a writer for plain class files. Don't close the enclosed
             // writer through it, but let it be closed later on.
@@ -407,8 +398,7 @@ public class DataEntryWriterFactory
             }
 
             // Add a control manifest to the outermost archive.
-            if (addCheckingJarWriter &&
-                checkedFileNames != null)
+            if (addCheckingJarWriter && checkedFileNames != null)
             {
                 writer =
                     wrapInCheckingJarWriter(isAab, writer, extraDataEntryWriter);
@@ -425,6 +415,8 @@ public class DataEntryWriterFactory
                         dexDataEntryWriterFactory.wrapInDexWriter(writer) :
                         classWriter,
                         writer);
+
+
         }
 
         // Let the writer cascade, if specified.
@@ -444,9 +436,9 @@ public class DataEntryWriterFactory
                                             boolean         closeCachedJarWriter,
                                             boolean         flatten,
                                             boolean         isJar,
-//                                            boolean         isAab,
+                                            boolean         isAab,
                                             String          jarFilterExtension,
-                                            List            jarFilter,
+                                            List<String>    jarFilter,
                                             byte[]          jarHeader,
                                             boolean         pageAlignNativeLibs,
                                             String[][]      prefixes)
@@ -467,7 +459,12 @@ public class DataEntryWriterFactory
         else if (!isJar || (zipWriter = jarWriterCache.get(file)) == null)
         {
             // Sign the jar.
-            zipWriter = writer;
+            zipWriter =
+                    wrapInSignedJarWriter(writer,
+                                          extraDataEntryWriter,
+                                          isAab,
+                                          jarHeader,
+                                          pageAlignmentFilter);
 
             // Add a prefix to specified files inside the jar.
             if (prefixes != null)
@@ -488,21 +485,6 @@ public class DataEntryWriterFactory
                             zipWriter);
                 }
             }
-
-            // Wrap with an app bundle writer if necessary, to include the
-            // necessary metadata files.
-            // TODO
-//            if (isAab)
-//            {
-//                zipWriter =
-//                    new AabWriter(splitDimensionFilter,
-//                                  uncompressedFilter,
-//                                  uncompressedGlobs,
-//                                  bundleUncompressNativeLibraries,
-//                                  bundleUncompressDexFiles,
-//                                  nativeDirectoryArchitectures(),
-//                                  zipWriter);
-//            }
 
             // Is it an outermost archive?
             if (isJar)
@@ -556,48 +538,29 @@ public class DataEntryWriterFactory
                                                   byte[]          jarHeader,
                                                   StringMatcher   pageAlignmentFilter)
     {
-        // Do we need Android apk signature schemes v2 or v3?
-//        boolean apkSignatureSchemeV2 =
-//            dalvik &&
-//            privateKeyEntries != null &&
-//            !isAab &&
-//            apkSignatureSchemeFilter.matches("v2");
-//
-//        boolean apkSignatureSchemeV3 =
-//            dalvik                                 &&
-//            privateKeyEntries != null              &&
-//            !isAab                                 &&
-//            apkSignatureSchemeFilter.matches("v3");
+        // Pack the zip.
+        DataEntryWriter zipWriter =
+                new ZipWriter(uncompressedFilter,
+                              uncompressedAlignment,
+                              !DISABLE_ZIP64_SUPPORT && isAab,
+                              pageAlignmentFilter,
+                              PAGE_ALIGNMENT,
+                              modificationTime,
+                              jarHeader,
+                              writer);
 
-        // Pack the jar.
-
-//        // Do we need to sign the jar with signature scheme v1?
-//        if (privateKeyEntries != null &&
-//            apkSignatureSchemeFilter.matches("v1"))
-//        {
-//            // Sign the jar (signature scheme v1).
-//            // Are we signing an Android app?
-//            zipWriter = !dalvik || isAab ?
-//                new SignedJarWriter(privateKeyEntries[0],
-//                                    new String[] { SignedJarWriter.DEFAULT_DIGEST_ALGORITHM },
-//                                    About.VERSION_STRING,
-//                                    zipWriter) :
-//                new SignedApkJarWriter(minSdkVersion,
-//                                       maxSdkVersion,
-//                                       privateKeyEntries[0],
-//                                       apkSignatureSchemeIDs,
-//                                       About.VERSION_STRING,
-//                                       zipWriter);
-//        }
-
-        return new ZipWriter(uncompressedFilter,
-                      uncompressedAlignment,
-                      !DISABLE_ZIP64_SUPPORT && isAab,
-                      pageAlignmentFilter,
-                      PAGE_ALIGNMENT,
-                      modificationTime,
-                      jarHeader,
-                      writer);
+        // Do we need to sign the jar?
+        if (privateKeyEntries != null)
+        {
+            // Sign the jar (signature scheme v1).
+            zipWriter =
+                    new SignedJarWriter(privateKeyEntries[0],
+                            new String[] { JarWriter.DEFAULT_DIGEST_ALGORITHM },
+                            "ProGuardCORE",
+                            null,
+                            zipWriter);
+        }
+        return zipWriter;
     }
 
 
@@ -616,14 +579,14 @@ public class DataEntryWriterFactory
         // The prefixes all start with "base/" at this point, except
         // possibly for AndroidManifest.xml and resources.pb, which
         // can't be checked anyway.
-//        if (isAab)
-//        {
-//            manifestEntryNameFunction =
-//                new PrefixRemovingStringFunction(AndroidConstants.AAB_BASE_MANIFEST_PREFIX, manifestEntryNameFunction,
-//                new PrefixRemovingStringFunction(AndroidConstants.AAB_BASE_DEX_PREFIX, manifestEntryNameFunction,
-//                new PrefixRemovingStringFunction(AndroidConstants.AAB_BASE_ROOT_PREFIX, manifestEntryNameFunction,
-//                new PrefixRemovingStringFunction(AndroidConstants.AAB_BASE_PREFIX))));
-//        }
+        if (isAab)
+        {
+            manifestEntryNameFunction =
+                new PrefixRemovingStringFunction(AndroidConstants.AAB_BASE_MANIFEST_PREFIX, manifestEntryNameFunction,
+                new PrefixRemovingStringFunction(AndroidConstants.AAB_BASE_DEX_PREFIX, manifestEntryNameFunction,
+                new PrefixRemovingStringFunction(AndroidConstants.AAB_BASE_ROOT_PREFIX, manifestEntryNameFunction,
+                new PrefixRemovingStringFunction(AndroidConstants.AAB_BASE_PREFIX))));
+        }
 
         // Add a control manifest to the extra data entry writer,
         // so it can be encrypted, etc.
@@ -648,27 +611,6 @@ public class DataEntryWriterFactory
                 new CollectionMatcher(checkedFileNames)),
                     checkedWriter,
                     writer);
-        }
-
-        // Filter app bundle files, if applicable.
-        if (isAab)
-        {
-            // Does any of the manifest files specify to fuse code into the
-            // universal apk?
-
-            // Bundletool then merges the classes.dex files for the
-            // universal apk.
-            String unwantedDexExpression = AndroidConstants.AAB_CLASSES_DEX_EXPRESSION;
-
-            // We shouldn't include bundle metadata files, and we can't check
-            // protobuffer files, since bundletool will still convert them.
-            checkedWriter =
-                new NameFilteredDataEntryWriter(AndroidConstants.AAB_BUNDLE_METADATA_EXPRESSION + ',' +
-                                                AndroidConstants.AAB_RESOURCES_PB_EXPRESSION    + ',' +
-                                                AndroidConstants.AAB_XML_FILE_EXPRESSION        + ',' +
-                                                unwantedDexExpression,
-                                                writer,
-                                                checkedWriter);
         }
 
         // We can't check many library files, since most of them will be

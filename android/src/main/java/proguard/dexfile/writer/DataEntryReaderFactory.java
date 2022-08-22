@@ -26,7 +26,7 @@ import proguard.util.WildcardManager;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -291,29 +291,25 @@ public class DataEntryReaderFactory
      * If no custom filter targeting a specific version is used, exclude such classes
      * from being read.
      */
-    public static List getFilterExcludingVersionedClasses(ClassPathEntry classPathEntry)
+    public static List<String> getFilterExcludingVersionedClasses(ClassPathEntry classPathEntry)
     {
-        List originalFilter = classPathEntry.getFilter();
+        List<String> originalFilter = classPathEntry.getFilter();
         if (originalFilter == null)
         {
-            return Arrays.asList(VERSIONS_EXCLUDE);
+            return Collections.singletonList(VERSIONS_EXCLUDE);
         }
         else
         {
             // If there is already a custom filter for versioned classes
             // assume that the filter is properly setup.
-            ListIterator it = originalFilter.listIterator();
-            while (it.hasNext())
-            {
-                String element = (String) it.next();
-                if (element.contains(VERSIONS_PATTERN))
-                {
+            for (String element : originalFilter) {
+                if (element.contains(VERSIONS_PATTERN)) {
                     return originalFilter;
                 }
             }
 
             // Otherwise, exclude all versioned classes.
-            List filter = new ArrayList<>();
+            List<String> filter = new ArrayList<>();
             filter.add(VERSIONS_EXCLUDE);
             filter.addAll(originalFilter);
             return filter;

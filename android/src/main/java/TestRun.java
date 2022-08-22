@@ -37,8 +37,8 @@ public class TestRun {
 //        String inputPath = "/home/pramitha/Downloads/app2.apk";
 //        String inputPath = "/home/pramitha/Downloads/SmaliSamples";
 
-        File inputFile = new File("/home/pramitha/Downloads/app1.apk");
-        File outputFile = new File("/home/pramitha/Downloads/DexOut/output/");
+        File inputFile = new File("/home/pramitha/Downloads/app2.apk");
+        File outputFile = new File("/home/pramitha/Downloads/DexOut/output/out.apk");
 
         ClassPath programFilePaths = new ClassPath();
         ClassPath libraryClassPaths = new ClassPath();
@@ -59,42 +59,14 @@ public class TestRun {
 
 //        libraryClassPool.classesAccept(new ClassPrinter());
 //        programClassPool.classesAccept(new ClassPrinter());
-        programClassPool.removeClass("com.example.MyClass");
 
-
-//        new OutputWriter(configuration)
-//        .execute(programClassPool, libraryClassPool);
-//
+        new OutputWriter(configuration)
+        .execute(programClassPool, libraryClassPool);
 
         // Create the writer for the main file or directory.
-        DataEntryWriter writer = outputFile.isFile() ? new FixedFileWriter(outputFile) : new DirectoryWriter(outputFile);
-//
+//        DataEntryWriter writer = outputFile.isFile() ? new FixedFileWriter(outputFile) : new DirectoryWriter(outputFile);
 ////
-        // A dex file can't contain resource files.
-        writer =
-                new FilteredDataEntryWriter(
-                        new DataEntryNameFilter(
-                                new ExtensionMatcher("dex")),
-                        writer);
-
-
-        writer = new DexDataEntryWriter(2, programClassPool, "test_classes.dex", true, writer, writer);
-
-        programClassPool.classesAccept(
-                new DataEntryClassWriter(writer));
-
-        writer.close();
-
-    }
-}
-
-
-
-//        File file = new File("/home/pramitha/Downloads/DexOut/output");
-//
-//        // Create the writer for the main file or directory.
-//        DataEntryWriter writer = file.isFile() ? new FixedFileWriter(file) : new DirectoryWriter(file);
-//
+//////
 //        // A dex file can't contain resource files.
 //        writer =
 //                new FilteredDataEntryWriter(
@@ -102,17 +74,13 @@ public class TestRun {
 //                                new ExtensionMatcher("dex")),
 //                        writer);
 //
-//        ClassPool cp = IOUtil.read("/home/pramitha/Downloads/spacemafia.jar", false);
 //
-//        DataEntryReaderFactory reader = new DataEntryReaderFactory();
+//        writer = new DexDataEntryWriter(2, programClassPool, "test_classes.dex", true, writer, writer);
 //
-//        writer = new DexDataEntryWriter(2, cp, "test_classes.dex", true, writer, writer);
-//
-//        cp.classesAccept(
+//        programClassPool.classesAccept(
 //                new DataEntryClassWriter(writer));
 //
 //        writer.close();
 
-//        System.out.println(Arrays.toString(consumer.getContents()));
-
-//        File file = new File("/home/pramitha/Downloads/SmaliSamples/smali_a.smali"); // from D8.run
+    }
+}
