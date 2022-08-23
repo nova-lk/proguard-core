@@ -39,6 +39,7 @@ public class TestRun {
 
         File inputFile = new File("/home/pramitha/Downloads/app2.apk");
         File outputFile = new File("/home/pramitha/Downloads/DexOut/output/out.apk");
+        File outputDex = new File("/home/pramitha/Downloads/DexOut/output/");
 
         ClassPath programFilePaths = new ClassPath();
         ClassPath libraryClassPaths = new ClassPath();
@@ -60,14 +61,13 @@ public class TestRun {
 //        libraryClassPool.classesAccept(new ClassPrinter());
 //        programClassPool.classesAccept(new ClassPrinter());
 
-        new OutputWriter(configuration)
-        .execute(programClassPool, libraryClassPool);
+//        new OutputWriter(configuration)
+//        .execute(programClassPool, libraryClassPool);
 
-        // Create the writer for the main file or directory.
-//        DataEntryWriter writer = outputFile.isFile() ? new FixedFileWriter(outputFile) : new DirectoryWriter(outputFile);
-////
-//////
-//        // A dex file can't contain resource files.
+//         Create the writer for the main file or directory.
+//        DataEntryWriter writer = outputDex.isFile() ? new FixedFileWriter(outputDex) : new DirectoryWriter(outputDex);
+
+        // A dex file can't contain resource files.
 //        writer =
 //                new FilteredDataEntryWriter(
 //                        new DataEntryNameFilter(
@@ -76,10 +76,10 @@ public class TestRun {
 //
 //
 //        writer = new DexDataEntryWriter(2, programClassPool, "test_classes.dex", true, writer, writer);
-//
+////
 //        programClassPool.classesAccept(
 //                new DataEntryClassWriter(writer));
-//
+
 //        writer.close();
 
     }

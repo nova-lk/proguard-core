@@ -31,7 +31,7 @@ import java.util.Set;
 public class DexDataEntryWriterFactory
 {
     private final ClassPool           programClassPool;
-    private final Configuration       configuration;
+//    private final Configuration       configuration;
     private final boolean             appBundle;
     private final DataEntryReader extraDexDataEntryVisitor;
     private final int                 threadCount;
@@ -62,12 +62,11 @@ public class DexDataEntryWriterFactory
      *                                 but must not read their contents.
      */
     public DexDataEntryWriterFactory(ClassPool       programClassPool,
-                                     Configuration configuration,
                                      boolean         appBundle,
                                      DataEntryReader extraDexDataEntryVisitor)
     {
         this.programClassPool = programClassPool;
-        this.configuration = configuration;
+//        this.configuration = configuration;
         this.appBundle = appBundle;
         this.extraDexDataEntryVisitor = extraDexDataEntryVisitor;
 
@@ -142,7 +141,7 @@ public class DexDataEntryWriterFactory
                                           dexWriter,
                                           otherWriter);
 
-           // Don't close the writer for dex files from enclosing writers.
+//            Don't close the writer for dex files from enclosing writers.
 //            dexWriter = new NonClosingDataEntryWriter(dexWriter);
 
 //            // Wrap with writers for any features.
@@ -209,7 +208,7 @@ public class DexDataEntryWriterFactory
                                             otherWriter);
 
 //        // Don't close the writer for dex files from enclosing writers.
-        dexWriter = new NonClosingDataEntryWriter(otherWriter);
+//        dexWriter = new NonClosingDataEntryWriter(otherWriter);
 
         // Wrap with writers for any multidex files.
         // The Android runtime and util classes will load them eagerly.
@@ -240,7 +239,8 @@ public class DexDataEntryWriterFactory
 ////                                                   index);
 ////            }
 //        }
-        return dexWriter;
+
+        return otherWriter;
     }
 
 

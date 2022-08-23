@@ -52,7 +52,6 @@ public class OutputWriter {
                         true,
                         new DexDataEntryWriterFactory(
                                 programClassPool,
-                                configuration,
                                 false,
                                 null),
                         null,

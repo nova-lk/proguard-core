@@ -109,8 +109,7 @@ public class DexDataEntryWriter implements DataEntryWriter
             Clazz clazz = classPool.getClass(className);
             if (clazz != null)
             {
-                setUp(dataEntry);
-                clazz.accept(currentClassConverter);
+                writeClass(className, dataEntry);
             }
 
             // Return a dummy, non-null output stream (to work with
@@ -155,7 +154,6 @@ public class DexDataEntryWriter implements DataEntryWriter
 
 
     // Small utility methods.
-
     private void writeClass(String className, DataEntry dataEntry) throws IOException
     {
         Clazz clazz = classPool.getClass(className);

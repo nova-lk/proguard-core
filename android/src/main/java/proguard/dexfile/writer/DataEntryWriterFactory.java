@@ -10,7 +10,6 @@ import proguard.classfile.ClassConstants;
 import proguard.classfile.ClassPool;
 import proguard.io.CascadingDataEntryWriter;
 import proguard.io.ClassDataEntryWriter;
-import proguard.io.DataEntryClassWriter;
 import proguard.io.DataEntryNameFilter;
 import proguard.io.DataEntryParentFilter;
 import proguard.io.DataEntryWriter;
@@ -420,9 +419,11 @@ public class DataEntryWriterFactory
         }
 
         // Let the writer cascade, if specified.
-        return alternativeWriter != null ?
-            new CascadingDataEntryWriter(writer, alternativeWriter) :
-            writer;
+//        return alternativeWriter != null ?
+//            new CascadingDataEntryWriter(writer, alternativeWriter) :
+//            writer;
+
+        return writer;
     }
 
 
