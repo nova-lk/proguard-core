@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2002-2020 Guardsquare NV
  */
-package proguard.dexfile.writer;
+package proguard.io;
 
 import com.android.tools.r8.ByteDataView;
 import com.android.tools.r8.CompilationFailedException;
@@ -17,14 +17,14 @@ import proguard.classfile.Clazz;
 import proguard.classfile.ProgramClass;
 import proguard.classfile.io.ProgramClassWriter;
 import proguard.classfile.visitor.ClassVisitor;
+import proguard.io.ClassPath;
+import proguard.io.ClassPathEntry;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -38,21 +38,16 @@ import java.util.Set;
  *
  * @author Thomas Neidhart
  */
-public class D8ClassConverter
-implements   ClassVisitor
+public class D8ClassConverter implements ClassVisitor
 {
-
     private final D8DexFile dexFile;
-
 
     public D8ClassConverter(D8DexFile dexFile)
     {
         this.dexFile = dexFile;
     }
 
-
     // Implementations for ClassVisitor.
-
     @Override
     public void visitAnyClass(Clazz clazz) {}
 
@@ -66,7 +61,7 @@ implements   ClassVisitor
 
             programClass.accept(
                 new ProgramClassWriter(
-                new DataOutputStream(byteArrayOutputStream)
+                        new DataOutputStream(byteArrayOutputStream)
                 )
             );
             byte[] classData = byteArrayOutputStream.toByteArray();
@@ -92,52 +87,37 @@ implements   ClassVisitor
     {
         private final InMemoryDexConsumer consumer;
         private final D8Command.Builder  androidAppBuilder;
-        private final int                 threadCount;
 
-
-        public D8DexFile(int           threadCount,
-                         List<Path> libraryJars)
+        public D8DexFile(ClassPath libraryJars)
         {
             consumer          = new InMemoryDexConsumer();
             androidAppBuilder = D8Command.builder();
-            this.threadCount  = threadCount;
+
 
             if (libraryJars != null)
             {
                 // Add all configured library jars for D8.
                 for (int index = 0; index < libraryJars.size(); index++)
                 {
-                    Path classPathEntry = libraryJars.get(index);
+                    ClassPathEntry classPathEntry = libraryJars.get(index);
 
                     // Only add existing library jars and supported file types to D8,
                     // otherwise we might get runtime errors.
-                    if (Files.exists(classPathEntry) &&
-                        (isDexFile(classPathEntry) ||
-                         isApkFile(classPathEntry) ||
-                         isArchive(classPathEntry)))
+                    if (Files.exists(classPathEntry.getFile().toPath()) &&
+                        (classPathEntry.isDex()) || isArchive(classPathEntry))
                     {
-                        androidAppBuilder.addLibraryFiles(classPathEntry);
+                        androidAppBuilder.addLibraryFiles(classPathEntry.getFile().toPath());
                     }
                 }
             }
         }
 
-        public static boolean isDexFile(Path path) {
-            String name = path.getFileName().toString().toLowerCase();
-            return name.endsWith(".dex");
-        }
+        public static boolean isArchive(ClassPathEntry path) {
 
-        public static boolean isApkFile(Path path) {
-            String name = path.getFileName().toString().toLowerCase();
-            return name.endsWith(".apk");
-        }
-
-        public static boolean isArchive(Path path) {
-            String name = path.getFileName().toString().toLowerCase();
-            return name.endsWith(".apk")
-                || name.endsWith(".jar")
-                || name.endsWith(".zip")
-                || name.endsWith(".aar");
+            return path.isApk()
+                || path.isJar()
+                || path.isAar()
+                || path.isZip();
         }
 
         public void addProgramClassData(byte[] data)
@@ -155,14 +135,11 @@ implements   ClassVisitor
                         .setProgramConsumer(consumer)
                         .build()
                 );
-
                 outputStream.write(consumer.data);
                 outputStream.flush();
             } catch (CompilationFailedException e) {
                 throw new IOException(e);
             }
-
-//            outputStream.write(consumer.data);
         }
     }
 
@@ -173,7 +150,6 @@ implements   ClassVisitor
     private static class InMemoryDexConsumer implements DexIndexedConsumer
     {
         private byte[] data;
-
 
         @Override
         public void accept(int fileIndex, ByteDataView data, Set<String> descriptors, DiagnosticsHandler handler)

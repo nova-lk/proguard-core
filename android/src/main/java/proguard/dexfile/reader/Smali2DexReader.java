@@ -1,7 +1,10 @@
-package proguard.io;
+package proguard.dexfile.reader;
 
 import org.jf.smali.Smali;
 import org.jf.smali.SmaliOptions;
+import proguard.io.DataEntry;
+import proguard.io.DataEntryReader;
+import proguard.io.FileDataEntry;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,7 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class Smali2DexReader implements  DataEntryReader{
+public class Smali2DexReader implements DataEntryReader {
 
     private final DataEntryReader dataEntryReader;
 

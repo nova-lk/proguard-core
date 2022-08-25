@@ -4,15 +4,9 @@
  *
  * Copyright (c) 2002-2020 Guardsquare NV
  */
-package proguard.dexfile.writer;
+package proguard.io;
 
 import proguard.classfile.ClassConstants;
-import proguard.io.DataEntryNameFilter;
-import proguard.io.DataEntryReader;
-import proguard.io.FilteredDataEntryReader;
-import proguard.io.JarReader;
-import proguard.io.PrefixStrippingDataEntryReader;
-import proguard.io.RenamedDataEntryReader;
 import proguard.util.AndMatcher;
 import proguard.util.ExtensionMatcher;
 import proguard.util.FileNameParser;
@@ -28,7 +22,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.ListIterator;
 
 
 /**

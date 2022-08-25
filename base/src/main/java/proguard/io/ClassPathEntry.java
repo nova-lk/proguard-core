@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package proguard.dexfile.writer;
+package proguard.io;
 
 import proguard.util.ListUtil;
 
@@ -456,25 +456,17 @@ public class ClassPathEntry
             zipFilter  != null)
         {
             string +=
-                ConfigurationConstants.OPEN_ARGUMENTS_KEYWORD +
-                (aarFilter  != null ? ListUtil.commaSeparatedString(aarFilter,  true) : "")  +
-                 ConfigurationConstants.SEPARATOR_KEYWORD +
-                (aabFilter  != null ? ListUtil.commaSeparatedString(aabFilter,  true) : "")  +
-                 ConfigurationConstants.SEPARATOR_KEYWORD +
-                (apkFilter  != null ? ListUtil.commaSeparatedString(apkFilter,  true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
-                (zipFilter  != null ? ListUtil.commaSeparatedString(zipFilter,  true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
-                (jmodFilter != null ? ListUtil.commaSeparatedString(jmodFilter, true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
-                (earFilter  != null ? ListUtil.commaSeparatedString(earFilter,  true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
-                (warFilter  != null ? ListUtil.commaSeparatedString(warFilter,  true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
-                (jarFilter  != null ? ListUtil.commaSeparatedString(jarFilter,  true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
+                "(" +
+                (aarFilter  != null ? ListUtil.commaSeparatedString(aarFilter,  true) : "")  + ";" +
+                (aabFilter  != null ? ListUtil.commaSeparatedString(aabFilter,  true) : "")  + ";" +
+                (apkFilter  != null ? ListUtil.commaSeparatedString(apkFilter,  true) : "")  + ";" +
+                (zipFilter  != null ? ListUtil.commaSeparatedString(zipFilter,  true) : "")  + ";" +
+                (jmodFilter != null ? ListUtil.commaSeparatedString(jmodFilter, true) : "")  + ";" +
+                (earFilter  != null ? ListUtil.commaSeparatedString(earFilter,  true) : "")  + ";" +
+                (warFilter  != null ? ListUtil.commaSeparatedString(warFilter,  true) : "")  + ";" +
+                (jarFilter  != null ? ListUtil.commaSeparatedString(jarFilter,  true) : "")  + ";" +
                 (filter     != null ? ListUtil.commaSeparatedString(filter,     true) : "")  +
-                ConfigurationConstants.CLOSE_ARGUMENTS_KEYWORD;
+                ")";
         }
 
         return string;

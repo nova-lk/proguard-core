@@ -1,34 +1,79 @@
 package proguard.io;
 
-import kotlinx.metadata.KmClassifier;
 import proguard.classfile.ClassPool;
 import proguard.classfile.visitor.ClassNameFilter;
 import proguard.classfile.visitor.ClassPoolFiller;
-import proguard.dexfile.writer.ClassPath;
-import proguard.dexfile.writer.ClassPathEntry;
-import proguard.dexfile.writer.Configuration;
-import proguard.dexfile.writer.DataEntryReaderFactory;
+import proguard.dexfile.reader.Smali2DexReader;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public class InputReader {
 
-    private final Configuration configuration;
+    /**
+     * A list of input and output entries (jars, wars, ears, jmods, zips, and directories).
+     */
+    private final ClassPath programJars;
 
-    public InputReader (Configuration configuration)
+    /**
+     * A list of library entries (jars, wars, ears, jmods, zips, and directories).
+     */
+    private final ClassPath libraryJars;
+
+    /**
+     * A list of String instances specifying a filter for files that should
+     * not be compressed in output jars.
+     */
+    private List<String> dontCompress;
+
+    /**
+     * Specifies whether the code should be targeted at the Android platform.
+     */
+    private boolean android = true;
+
+    private boolean dalvik = true;
+
+    /**
+     * Specifies whether to skip non-public library classes while reading
+     * library jars.
+     */
+    private boolean skipNonPublicLibraryClasses = false;
+
+    /**
+     * Specifies whether to skip non-public library class members while reading
+     * library classes.
+     */
+    private boolean skipNonPublicLibraryClassMembers = true;
+
+
+    public InputReader (ClassPath programJars, ClassPath libraryJars)
     {
-        this.configuration = configuration;
+        this.programJars = programJars;
+        this.libraryJars = libraryJars;
     }
 
+    /**
+     * Fills the program class pool, library class pool, and resource file
+     * pool by reading files based on the current configuration.
+     */
     public void execute(ClassPool programClassPool, ClassPool libraryClassPool) throws IOException {
 
         ClassPoolFiller programClassPoolFiller = new ClassPoolFiller(programClassPool);
         ClassPoolFiller libraryClassPoolFiller = new ClassPoolFiller(libraryClassPool);
 
+        // Create a reader to fill the program class pool (while checking for
+        // duplicates).
         DataEntryReader classReader =
                 new ClassReader(false,
-                        false,
-                        false,
+                        skipNonPublicLibraryClasses,
+                        skipNonPublicLibraryClassMembers,
                         false,
                         null,
                         new ClassNameFilter(
@@ -37,6 +82,7 @@ public class InputReader {
                         )
                 );
 
+        // Dex reader
         DataEntryReader dexReader =
                 new NameFilteredDataEntryReader(
                         "classes*.dex",
@@ -46,6 +92,7 @@ public class InputReader {
                         )
                 );
 
+        // Read smali files
         dexReader =
                 new NameFilteredDataEntryReader(
                         "**.smali",
@@ -53,20 +100,28 @@ public class InputReader {
                         dexReader
                 );
 
+        // Detect compression of the inputs.
+        determineCompressionMethod(programJars);
+
+        // Read the program class files and resource files and put them in the
+        // program class pool and resource file pool.
         readInput("Reading program ",
-                configuration.programJars,
+                programJars,
                 new ClassFilter(classReader, dexReader));
 
-        if (configuration.libraryJars != null)
+        // Read the library class files, if any.
+        if (libraryJars != null)
         {
+            // Read the library class files and put then in the library class
+            // pool.
             readInput("Reading library ",
-                    configuration.libraryJars,
+                    libraryJars,
                     new ClassFilter(
                             new ClassReader(
                                     true,
-                                    false,
-                                    false,
-                                    false,
+                                    skipNonPublicLibraryClasses,
+                                    skipNonPublicLibraryClassMembers,
+                                    true,
                                     null,
                                     new ClassNameFilter(
                                             "**",
@@ -126,7 +181,7 @@ public class InputReader {
         {
             // Create a reader that can unwrap jars, wars, ears, jmods and zips.
             DataEntryReader reader =
-                    new DataEntryReaderFactory(configuration.android)
+                    new DataEntryReaderFactory(android)
                             .createDataEntryReader(messagePrefix,
                                                    classPathEntry,
                                                    dataEntryReader);
@@ -142,6 +197,76 @@ public class InputReader {
         {
             throw new IOException("Can't read [" + classPathEntry + "] (" + ex.getMessage() + ")", ex);
         }
+    }
+
+
+    protected void determineCompressionMethod(ClassPath classPath)
+    {
+        for (int index = 0; index < classPath.size(); index++)
+        {
+            ClassPathEntry entry = classPath.get(index);
+            if (!entry.isOutput())
+            {
+                determineCompressionMethod(entry);
+            }
+        }
+    }
+
+
+    private void determineCompressionMethod(ClassPathEntry entry) {
+        File file = entry.getFile();
+        if (file == null || file.isDirectory())
+        {
+            return;
+        }
+
+        String regexDexClasses = "classes*.dex";
+
+        try (ZipFile zip = new ZipFile(file))
+        {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+
+            Set<String> storedEntries = new TreeSet<>();
+
+            if (dontCompress != null)
+            {
+                storedEntries.addAll(dontCompress);
+            }
+
+            while (entries.hasMoreElements())
+            {
+                ZipEntry zipEntry = entries.nextElement();
+                if (zipEntry.getMethod() == ZipEntry.DEFLATED)
+                {
+                    continue;
+                }
+
+                String name = zipEntry.getName();
+
+                // Special case for classes.dex: If we end up creating another dex file, we want all dex files compression to be consistent.
+                if (name.matches("classes\\d*.dex"))
+                {
+                    storedEntries.add(regexDexClasses);
+                }
+                else
+                {
+                    storedEntries.add(name);
+                }
+            }
+
+            if (!storedEntries.isEmpty())
+            {
+                dontCompress = new ArrayList<>(storedEntries);
+            }
+        }
+        catch (Exception e)
+        {
+            System.out.println("Could not determine compression method for entries of: " + file.getAbsolutePath() + ". You may need to add -dontcompress rules manually for this file. " + e);
+        }
+    }
+
+    public List<String> getDontCompressList(){
+        return dontCompress;
     }
 
 }

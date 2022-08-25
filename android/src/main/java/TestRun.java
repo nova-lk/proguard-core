@@ -1,32 +1,12 @@
 import com.android.tools.r8.CompilationFailedException;
-//import com.guardsquare.proguard.tools.Smali2DexReader;
 import proguard.classfile.ClassPool;
-import proguard.classfile.visitor.ClassPrinter;
-import proguard.dexfile.writer.ClassPath;
-import proguard.dexfile.writer.ClassPathEntry;
-import proguard.dexfile.writer.Configuration;
-import proguard.dexfile.writer.DataEntryReaderFactory;
-import proguard.dexfile.writer.DataEntryWriterFactory;
-import proguard.dexfile.writer.DexDataEntryWriter;
-import proguard.dexfile.writer.DexDataEntryWriterFactory;
-import proguard.io.DataEntryClassWriter;
-import proguard.io.DataEntryNameFilter;
-import proguard.io.DataEntryWriter;
-import proguard.io.DirectoryWriter;
-import proguard.io.FilteredDataEntryWriter;
-import proguard.io.FixedFileWriter;
+import proguard.io.ClassPath;
+import proguard.io.ClassPathEntry;
 import proguard.io.InputReader;
 import proguard.io.OutputWriter;
-import proguard.io.util.IOUtil;
-import proguard.util.ExtensionMatcher;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 public class TestRun {
@@ -38,7 +18,7 @@ public class TestRun {
 //        String inputPath = "/home/pramitha/Downloads/SmaliSamples";
 
         File inputFile = new File("/home/pramitha/Downloads/app2.apk");
-        File outputFile = new File("/home/pramitha/Downloads/DexOut/output/out.apk");
+        File outputFile = new File("/home/pramitha/Downloads/DexOut/output/");
         File outputDex = new File("/home/pramitha/Downloads/DexOut/output/");
 
         ClassPath programFilePaths = new ClassPath();
@@ -50,24 +30,22 @@ public class TestRun {
         ClassPool programClassPool = new ClassPool();
         ClassPool libraryClassPool = new ClassPool();
 
-        Configuration configuration = new Configuration();
-        configuration.programJars = programFilePaths;
-        configuration.libraryJars = libraryClassPaths;
-        configuration.android = true;
 
-        new InputReader(configuration)
-        .execute(programClassPool, libraryClassPool);
+        InputReader inputReader = new InputReader(programFilePaths, libraryClassPaths);
+        inputReader.execute(programClassPool, libraryClassPool);
+
+        List<String> dontCompress = inputReader.getDontCompressList();
 
 //        libraryClassPool.classesAccept(new ClassPrinter());
 //        programClassPool.classesAccept(new ClassPrinter());
 
-//        new OutputWriter(configuration)
-//        .execute(programClassPool, libraryClassPool);
+        new OutputWriter(programFilePaths, libraryClassPaths, dontCompress)
+        .execute(programClassPool, libraryClassPool);
 
-//         Create the writer for the main file or directory.
+////         Create the writer for the main file or directory.
 //        DataEntryWriter writer = outputDex.isFile() ? new FixedFileWriter(outputDex) : new DirectoryWriter(outputDex);
-
-        // A dex file can't contain resource files.
+//
+//        // A dex file can't contain resource files.
 //        writer =
 //                new FilteredDataEntryWriter(
 //                        new DataEntryNameFilter(
@@ -75,11 +53,11 @@ public class TestRun {
 //                        writer);
 //
 //
-//        writer = new DexDataEntryWriter(2, programClassPool, "test_classes.dex", true, writer, writer);
+//        writer = new DexDataEntryWriter(6, programClassPool, "test_classes.dex", true, writer, writer);
 ////
 //        programClassPool.classesAccept(
 //                new DataEntryClassWriter(writer));
-
+//
 //        writer.close();
 
     }

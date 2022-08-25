@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2002-2020 Guardsquare NV
  */
-package proguard.dexfile.writer;
+package proguard.io;
 
 import proguard.classfile.Clazz;
 import proguard.classfile.visitor.ClassVisitor;

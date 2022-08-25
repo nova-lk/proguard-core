@@ -1,38 +1,54 @@
 package proguard.io;
 
-import com.android.tools.r8.internal.Cl;
 import proguard.classfile.ClassPool;
 import proguard.classfile.Clazz;
-import proguard.classfile.ProgramClass;
-import proguard.classfile.editor.InterfaceDeleter;
 import proguard.classfile.visitor.ClassPoolFiller;
-import proguard.classfile.visitor.ClassVisitor;
-import proguard.dexfile.writer.ClassPath;
-import proguard.dexfile.writer.ClassPathEntry;
-import proguard.dexfile.writer.Configuration;
-import proguard.dexfile.writer.DataEntryWriterFactory;
-import proguard.dexfile.writer.DexDataEntryWriterFactory;
+import proguard.util.FileNameParser;
+import proguard.util.ListParser;
+import proguard.util.StringMatcher;
 
-import java.io.File;
 import java.io.IOException;
-import java.security.KeyStore;
 import java.util.Date;
 import java.util.List;
 
 public class OutputWriter {
 
-    private final Configuration configuration;
+    /**
+     * A list of input and output entries (jars, wars, ears, jmods, zips, and directories).
+     */
+    private final ClassPath programJars;
 
-    public OutputWriter(Configuration configuration) {
-        this.configuration = configuration;
+    /**
+     * A list of library entries (jars, wars, ears, jmods, zips, and directories).
+     */
+    private final ClassPath libraryJars;
+
+    /**
+     * A list of String instances specifying a filter for files that should
+     * not be compressed in output jars.
+     */
+    private final List<String> dontCompress;
+
+    /**
+     * Specifies whether the code should be targeted at the Android platform.
+     */
+    private boolean android = true;
+
+    private boolean dalvik = true;
+
+
+    public OutputWriter(ClassPath programJars, ClassPath libraryJars, List<String> dontCompress) {
+        this.programJars = programJars;
+        this.libraryJars = libraryJars;
+        this.dontCompress = dontCompress;
     }
 
     public void execute(ClassPool programClassPool, ClassPool libraryClassPool) throws IOException {
 
-        ClassPath programJars = configuration.programJars;
-
-        // Get the private key from the key store.
-        KeyStore.PrivateKeyEntry[] privateKeyEntries = retrievePrivateKeys(); // null for now
+        // Construct a filter for files that shouldn't be compressed.
+        StringMatcher uncompressedFilter =
+                dontCompress == null ? null :
+                        new ListParser(new FileNameParser()).parse(dontCompress);
 
         // Convert the current time into DOS date and time.
         Date currentDate = new Date();
@@ -44,25 +60,27 @@ public class OutputWriter {
                         currentDate.getMinutes()     << 5  |
                         currentDate.getSeconds()     >> 1;
 
+        // Create a data entry writer factory for dex files.
+        DexDataEntryWriterFactory dexDataEntryWriterFactory =
+                dalvik ?
+                        new DexDataEntryWriterFactory(
+                                programClassPool,
+                                libraryJars,
+                                false,
+                                1) :
+                        null;
+
 
         // Create a main data entry writer factory for all nested archives.
         DataEntryWriterFactory dataEntryWriterFactory =
                 new DataEntryWriterFactory(
                         programClassPool,
-                        true,
-                        new DexDataEntryWriterFactory(
-                                programClassPool,
-                                false,
-                                null),
-                        null,
+                        dalvik,
+                        dexDataEntryWriterFactory,
+                        uncompressedFilter,
                         1,
-                        configuration.android,
-                        modificationTime,
-                        false,
-                        null,
-                        null);
-
-        DataEntryWriter extraDataEntryWriter = null;
+                        android,
+                        modificationTime);
 
         int firstInputIndex = 0;
         int lastInputIndex  = 0;
@@ -86,14 +104,6 @@ public class OutputWriter {
                 {
                     // Write the processed input entries to the output entries.
                     writeOutput(dataEntryWriterFactory,
-                            configuration,
-                            programClassPool,
-                            extraDataEntryWriter != null ?
-                                    // The extraDataEntryWriter must be remain open
-                                    // until all outputs have been written.
-                                    new NonClosingDataEntryWriter(extraDataEntryWriter) :
-                                    // no extraDataEntryWriter supplied
-                                    null,
                             programJars,
                             firstInputIndex,
                             lastInputIndex + 1,
@@ -104,34 +114,13 @@ public class OutputWriter {
                 }
             }
         }
-
-        if (extraDataEntryWriter != null)
-        {
-            extraDataEntryWriter.close();
-        }
-
     }
 
-    private KeyStore.PrivateKeyEntry[] retrievePrivateKeys()
-    throws IOException
-    {
-        // Check the signing variables.
-        List<File>   keyStoreFiles     = null;
-        List<String> keyStorePasswords = null;
-        List<String> keyAliases        = null;
-        List<String> keyPasswords      = null;
-
-        return null;
-
-    }
 
     /**
      * Transfers the specified input jars to the specified output jars.
      */
     private void writeOutput(DataEntryWriterFactory dataEntryWriterFactory,
-                             Configuration          configuration,
-                             ClassPool              programClassPool,
-                             DataEntryWriter        extraDataEntryWriter,
                              ClassPath              classPath,
                              int                    fromInputIndex,
                              int                    fromOutputIndex,
@@ -149,45 +138,23 @@ public class OutputWriter {
             DataEntryWriter writer =
                     dataEntryWriterFactory.createDataEntryWriter(classPath,
                                                                  fromOutputIndex,
-                                                                 toOutputIndex,
-                                                                 null);
+                                                                 toOutputIndex);
 
             // By default, just copy resource files into the above writers.
             DataEntryReader resourceCopier = new DataEntryCopier(writer);
 
-
-            // We're now switching to the reader side, operating on the
-            // contents possibly parsed from the input streams.
-            DataEntryReader resourceRewriter = resourceCopier;
-
-            // Write any kept directories.
-            DataEntryReader reader =
-                    writeDirectories(
-                            configuration,
-                            programClassPool,
-                            resourceCopier,
-                            resourceRewriter);
-
             // Write classes.
-            DataEntryReader classReader = new ClassFilter(new IdleRewriter(writer), reader);
+            DataEntryReader classReader = new ClassFilter(new IdleRewriter(writer), resourceCopier);
 
-//            // Write classes attached as extra data entries.
-//            DataEntryReader extraClassReader = extraDataEntryWriter != null ?
-//                    new ClassFilter(new IdleRewriter(extraDataEntryWriter), reader) :
-//                    classReader;
-//
-            reader =
+            DataEntryReader reader =
                     new NameFilteredDataEntryReader(
                             "classes*.dex",
-                            new DataEntryReader() {
-                                @Override
-                                public void read(DataEntry dataEntry) throws IOException {
-                                    ClassPool classPool = new ClassPool();
-                                    new DexClassReader(false, new ClassPoolFiller(classPool)).read(dataEntry);
-                                    for (Clazz programClass : classPool.classes())
-                                    {
-                                        classReader.read(new RenamedDataEntry(dataEntry, programClass.getName() + ".class"));
-                                    }
+                            dataEntry -> {
+                                ClassPool classPool = new ClassPool();
+                                new DexClassReader(false, new ClassPoolFiller(classPool)).read(dataEntry);
+                                for (Clazz programClass : classPool.classes())
+                                {
+                                    classReader.read(new RenamedDataEntry(dataEntry, programClass.getName() + ".class"));
                                 }
                             },
                             classReader
@@ -197,7 +164,7 @@ public class OutputWriter {
 
             // Go over the specified input entries and write their processed
             // versions.
-            new InputReader(configuration).readInput("  Copying resources from program ",
+            new InputReader(programJars, libraryJars).readInput("  Copying resources from program ",
                     classPath,
                     fromInputIndex,
                     fromOutputIndex,
@@ -212,28 +179,4 @@ public class OutputWriter {
             throw new IOException(message, ex);
         }
     }
-
-    private DirectoryFilter writeDirectories(Configuration   configuration,
-                                             ClassPool       programClassPool,
-                                             DataEntryReader directoryCopier,
-                                             DataEntryReader fileCopier)
-    {
-        DataEntryReader directoryRewriter = null;
-
-        // Wrap the directory copier with a filter and a data entry renamer.
-//        if (configuration.keepDirectories != null)
-//        {
-//            StringFunction packagePrefixFunction =
-//                    new MapStringFunction(createPackagePrefixMap(programClassPool));
-//
-//            directoryRewriter =
-//                    new NameFilteredDataEntryReader(configuration.keepDirectories,
-//                            new RenamedDataEntryReader(packagePrefixFunction,
-//                                    directoryCopier,
-//                                    directoryCopier));
-//        }
-
-        return new DirectoryFilter(directoryRewriter, fileCopier);
-    }
-
 }
