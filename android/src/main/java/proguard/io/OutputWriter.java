@@ -67,7 +67,8 @@ public class OutputWriter {
                                 programClassPool,
                                 libraryJars,
                                 false,
-                                1) :
+                                1,
+                                null) :
                         null;
 
 

@@ -10,6 +10,7 @@ import proguard.classfile.ClassConstants;
 import proguard.classfile.ClassPool;
 import proguard.classfile.Clazz;
 import proguard.classfile.visitor.ClassVisitor;
+import proguard.util.StringMatcher;
 
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -25,12 +26,13 @@ import java.io.PrintWriter;
  * @see IdleRewriter
  * @author Eric Lafortune
  */
-public class DexDataEntryWriter implements DataEntryWriter
+public abstract class DexDataEntryWriter implements DataEntryWriter
 {
     private   final ClassPool       classPool;
+    private   final StringMatcher   classNameFilter;
     protected final String          dexFileName;
     private   final boolean         forceDex;
-    private final D8ClassConverter.D8DexFile dexFile;
+    private   final DataEntryReader extraDexDataEntryVisitor;
     protected final DataEntryWriter dexDataEntryWriter;
     protected final DataEntryWriter otherDataEntryWriter;
 
@@ -43,6 +45,8 @@ public class DexDataEntryWriter implements DataEntryWriter
      *
      * @param classPool                the class pool from which classes are
      *                                 collected.
+     * @param classNameFilter          an optional filter for classes to be
+     *                                 written.
      * @param dexFileName              the dex file name.
      * @param forceDex                 specifies whether the dex files should
      *                                 always be written, even if they don't
@@ -53,20 +57,21 @@ public class DexDataEntryWriter implements DataEntryWriter
      *                                 are written.
      */
     public DexDataEntryWriter(ClassPool       classPool,
-                              ClassPath       libraryJars,
+                              StringMatcher classNameFilter,
                               String          dexFileName,
                               boolean         forceDex,
+                              DataEntryReader extraDexDataEntryVisitor,
                               DataEntryWriter dexDataEntryWriter,
                               DataEntryWriter otherDataEntryWriter)
     {
         this.classPool                = classPool;
+        this.classNameFilter          = classNameFilter;
         this.dexFileName              = dexFileName;
         this.forceDex                 = forceDex;
-        this.dexFile                  = new D8ClassConverter.D8DexFile(libraryJars);
+        this.extraDexDataEntryVisitor = extraDexDataEntryVisitor;
         this.dexDataEntryWriter       = dexDataEntryWriter;
         this.otherDataEntryWriter     = otherDataEntryWriter;
 
-        this.currentClassConverter    = new D8ClassConverter(dexFile);
     }
 
 
@@ -101,8 +106,8 @@ public class DexDataEntryWriter implements DataEntryWriter
         {
             // Does it still have a corresponding class?
             String className = name.substring(0, name.length() - ClassConstants.CLASS_FILE_EXTENSION.length());
-            Clazz clazz = classPool.getClass(className);
-            if (clazz != null)
+            if (classNameFilter == null ||
+                    classNameFilter.matches(className))
             {
                 writeClass(className, dataEntry);
             }
@@ -164,7 +169,7 @@ public class DexDataEntryWriter implements DataEntryWriter
         {
             // Create a new class-to-dex converter.
             currentDexEntry       = new DexDataEntry(dataEntry, dexFileName);
-            currentClassConverter = new UniqueClassFilter(new D8ClassConverter(dexFile));
+            currentClassConverter = new UniqueClassFilter(createClassConverter());
         }
     }
 
@@ -191,14 +196,14 @@ public class DexDataEntryWriter implements DataEntryWriter
             OutputStream outputStream =
                 dexDataEntryWriter.createOutputStream(currentDexEntry);
 
+            if (extraDexDataEntryVisitor != null)
+            {
+                extraDexDataEntryVisitor.read(currentDexEntry);
+            }
+
             if (outputStream != null)
             {
-                try{
-                    dexFile.writeTo(outputStream);
-                }
-                finally {
-                    outputStream.close();
-                }
+                writeDex(outputStream);
             }
 
             currentDexEntry       = null;
@@ -207,7 +212,21 @@ public class DexDataEntryWriter implements DataEntryWriter
     }
 
 
-    private static class DexDataEntry extends RenamedDataEntry {
+    /**
+     * Creates a new class converter that collects converted classes
+     * in our Dex composer.
+     */
+    abstract ClassVisitor createClassConverter();
+
+
+    /**
+     * Creates a new Dex instance from the collected classes.
+     */
+    protected abstract void writeDex(OutputStream outputStream) throws IOException;
+
+
+    private static class DexDataEntry extends RenamedDataEntry
+    {
 
         public DexDataEntry(DataEntry dataEntry, String name)
         {

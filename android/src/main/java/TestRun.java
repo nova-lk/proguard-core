@@ -17,21 +17,24 @@ public class TestRun {
 //        String inputPath = "/home/pramitha/Downloads/app2.apk";
 //        String inputPath = "/home/pramitha/Downloads/SmaliSamples";
 
-        File inputFile = new File("/home/pramitha/Downloads/app2.apk");
-        File outputFile = new File("/home/pramitha/Downloads/DexOut/output/");
-        File outputDex = new File("/home/pramitha/Downloads/DexOut/output/");
+        File inputFile = new File("/home/pramitha/Downloads/apprelease.apk");
+        File outputFile = new File("/home/pramitha/Downloads/DexOut/output/out.apk");
 
-        ClassPath programFilePaths = new ClassPath();
-        ClassPath libraryClassPaths = new ClassPath();
+        File libraryFile = new File("/home/pramitha/Android/Sdk/platforms/android-33/android.jar");
 
-        programFilePaths.add(new ClassPathEntry(inputFile, false));
-        programFilePaths.add(new ClassPathEntry(outputFile, true));
+
+        ClassPath programJars = new ClassPath();
+        ClassPath libraryjars = new ClassPath();
+
+        programJars.add(new ClassPathEntry(inputFile, false));
+        programJars.add(new ClassPathEntry(outputFile, true));
+        libraryjars.add(new ClassPathEntry(libraryFile, false));
 
         ClassPool programClassPool = new ClassPool();
         ClassPool libraryClassPool = new ClassPool();
 
 
-        InputReader inputReader = new InputReader(programFilePaths, libraryClassPaths);
+        InputReader inputReader = new InputReader(programJars, libraryjars);
         inputReader.execute(programClassPool, libraryClassPool);
 
         List<String> dontCompress = inputReader.getDontCompressList();
@@ -39,7 +42,7 @@ public class TestRun {
 //        libraryClassPool.classesAccept(new ClassPrinter());
 //        programClassPool.classesAccept(new ClassPrinter());
 
-        new OutputWriter(programFilePaths, libraryClassPaths, dontCompress)
+        new OutputWriter(programJars, libraryjars, dontCompress)
         .execute(programClassPool, libraryClassPool);
 
 ////         Create the writer for the main file or directory.
