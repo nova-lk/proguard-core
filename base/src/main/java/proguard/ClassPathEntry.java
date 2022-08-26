@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package proguard.dexfile.writer;
+package proguard;
 
 import proguard.util.ListUtil;
 
@@ -45,15 +45,15 @@ public class ClassPathEntry
     private File    file;
     private boolean output;
     private String  featureName;
-    private List<String>  filter;
-    private List<String>  apkFilter;
-    private List<String>  aabFilter;
-    private List<String>  jarFilter;
-    private List<String>  aarFilter;
-    private List<String>  warFilter;
-    private List<String>  earFilter;
-    private List<String>  jmodFilter;
-    private List<String>  zipFilter;
+    private List<String>    filter;
+    private List<String>     apkFilter;
+    private List<String>     aabFilter;
+    private List<String>     jarFilter;
+    private List<String>     aarFilter;
+    private List<String>     warFilter;
+    private List<String>     earFilter;
+    private List<String>     jmodFilter;
+    private List<String>     zipFilter;
 
     private String cachedName;
 
@@ -298,7 +298,7 @@ public class ClassPathEntry
     /**
      * Sets the name filter that is applied to bottom-level files in this entry.
      */
-    public void setFilter(List<String> filter)
+    public void setFilter(List<String>  filter)
     {
         this.filter = filter == null || filter.size() == 0 ? null : filter;
     }
@@ -307,7 +307,7 @@ public class ClassPathEntry
     /**
      * Returns the name filter that is applied to apk files in this entry, if any.
      */
-    public List<String> getApkFilter()
+    public List<String>  getApkFilter()
     {
         return apkFilter;
     }
@@ -315,7 +315,7 @@ public class ClassPathEntry
     /**
      * Sets the name filter that is applied to apk files in this entry, if any.
      */
-    public void setApkFilter(List<String> filter)
+    public void setApkFilter(List<String>  filter)
     {
         this.apkFilter = filter == null || filter.size() == 0 ? null : filter;
     }
@@ -324,7 +324,7 @@ public class ClassPathEntry
     /**
      * Returns the name filter that is applied to aab files in this entry, if any.
      */
-    public List<String> getAabFilter()
+    public List<String>  getAabFilter()
     {
         return aabFilter;
     }
@@ -332,7 +332,7 @@ public class ClassPathEntry
     /**
      * Sets the name filter that is applied to aab files in this entry, if any.
      */
-    public void setAabFilter(List<String> filter)
+    public void setAabFilter(List<String>  filter)
     {
         this.aabFilter = filter == null || filter.size() == 0 ? null : filter;
     }
@@ -341,7 +341,7 @@ public class ClassPathEntry
     /**
      * Returns the name filter that is applied to jar files in this entry, if any.
      */
-    public List<String> getJarFilter()
+    public List<String>  getJarFilter()
     {
         return jarFilter;
     }
@@ -349,7 +349,7 @@ public class ClassPathEntry
     /**
      * Sets the name filter that is applied to jar files in this entry, if any.
      */
-    public void setJarFilter(List<String> filter)
+    public void setJarFilter(List<String>  filter)
     {
         this.jarFilter = filter == null || filter.size() == 0 ? null : filter;
     }
@@ -358,7 +358,7 @@ public class ClassPathEntry
     /**
      * Returns the name filter that is applied to aar files in this entry, if any.
      */
-    public List<String> getAarFilter()
+    public List<String>  getAarFilter()
     {
         return aarFilter;
     }
@@ -366,7 +366,7 @@ public class ClassPathEntry
     /**
      * Sets the name filter that is applied to aar files in this entry, if any.
      */
-    public void setAarFilter(List<String> filter)
+    public void setAarFilter(List<String>  filter)
     {
         this.aarFilter = filter == null || filter.size() == 0 ? null : filter;
     }
@@ -375,7 +375,7 @@ public class ClassPathEntry
     /**
      * Returns the name filter that is applied to war files in this entry, if any.
      */
-    public List<String> getWarFilter()
+    public List<String>  getWarFilter()
     {
         return warFilter;
     }
@@ -383,7 +383,7 @@ public class ClassPathEntry
     /**
      * Sets the name filter that is applied to war files in this entry, if any.
      */
-    public void setWarFilter(List<String> filter)
+    public void setWarFilter(List<String>  filter)
     {
         this.warFilter = filter == null || filter.size() == 0 ? null : filter;
     }
@@ -392,7 +392,7 @@ public class ClassPathEntry
     /**
      * Returns the name filter that is applied to ear files in this entry, if any.
      */
-    public List<String> getEarFilter()
+    public List<String>  getEarFilter()
     {
         return earFilter;
     }
@@ -400,7 +400,7 @@ public class ClassPathEntry
     /**
      * Sets the name filter that is applied to ear files in this entry, if any.
      */
-    public void setEarFilter(List<String> filter)
+    public void setEarFilter(List<String>  filter)
     {
         this.earFilter = filter == null || filter.size() == 0 ? null : filter;
     }
@@ -409,7 +409,7 @@ public class ClassPathEntry
     /**
      * Returns the name filter that is applied to jmod files in this entry, if any.
      */
-    public List<String> getJmodFilter()
+    public List<String>  getJmodFilter()
     {
         return jmodFilter;
     }
@@ -417,7 +417,7 @@ public class ClassPathEntry
     /**
      * Sets the name filter that is applied to jmod files in this entry, if any.
      */
-    public void setJmodFilter(List<String> filter)
+    public void setJmodFilter(List<String>  filter)
     {
         this.jmodFilter = filter == null || filter.size() == 0 ? null : filter;
     }
@@ -425,7 +425,7 @@ public class ClassPathEntry
     /**
      * Returns the name filter that is applied to zip files in this entry, if any.
      */
-    public List<String> getZipFilter()
+    public List<String>  getZipFilter()
     {
         return zipFilter;
     }
@@ -433,50 +433,8 @@ public class ClassPathEntry
     /**
      * Sets the name filter that is applied to zip files in this entry, if any.
      */
-    public void setZipFilter(List<String> filter)
+    public void setZipFilter(List<String>  filter)
     {
         this.zipFilter = filter == null || filter.size() == 0 ? null : filter;
-    }
-
-
-    // Implementations for Object.
-
-    public String toString()
-    {
-        String string = getName();
-
-        if (filter     != null ||
-            apkFilter  != null ||
-            aabFilter  != null ||
-            jarFilter  != null ||
-            aarFilter  != null ||
-            warFilter  != null ||
-            earFilter  != null ||
-            jmodFilter != null ||
-            zipFilter  != null)
-        {
-            string +=
-                ConfigurationConstants.OPEN_ARGUMENTS_KEYWORD +
-                (aarFilter  != null ? ListUtil.commaSeparatedString(aarFilter,  true) : "")  +
-                 ConfigurationConstants.SEPARATOR_KEYWORD +
-                (aabFilter  != null ? ListUtil.commaSeparatedString(aabFilter,  true) : "")  +
-                 ConfigurationConstants.SEPARATOR_KEYWORD +
-                (apkFilter  != null ? ListUtil.commaSeparatedString(apkFilter,  true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
-                (zipFilter  != null ? ListUtil.commaSeparatedString(zipFilter,  true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
-                (jmodFilter != null ? ListUtil.commaSeparatedString(jmodFilter, true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
-                (earFilter  != null ? ListUtil.commaSeparatedString(earFilter,  true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
-                (warFilter  != null ? ListUtil.commaSeparatedString(warFilter,  true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
-                (jarFilter  != null ? ListUtil.commaSeparatedString(jarFilter,  true) : "")  +
-                ConfigurationConstants.SEPARATOR_KEYWORD +
-                (filter     != null ? ListUtil.commaSeparatedString(filter,     true) : "")  +
-                ConfigurationConstants.CLOSE_ARGUMENTS_KEYWORD;
-        }
-
-        return string;
     }
 }

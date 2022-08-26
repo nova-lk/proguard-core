@@ -55,7 +55,7 @@ public class Dex2Pro {
      * with an empty {@link CodeAttribute}.
      */
     private static final int MAX_PHI_LABELS = Integer.parseInt(System.getProperty("proguard.dexconversion.maxphilabels", "0"));
-    private static final int MAX_CODE_LENGTH = Integer.parseInt(System.getProperty("proguard.dexconversion.maxcodelength", "10000"));
+    private static final int MAX_CODE_LENGTH = Integer.parseInt(System.getProperty("proguard.dexconversion.maxcodelength", "20000"));
 
     /**
      * If the conversion to dex fails for any reason, an empty code will be returned, but the execution will not stop

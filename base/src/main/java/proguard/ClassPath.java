@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package proguard.dexfile.writer;
+package proguard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class ClassPath
 {
-    private final List<ClassPathEntry> classPathEntries = new ArrayList<>();
+    private final List classPathEntries = new ArrayList();
 
 
     /**
@@ -39,8 +39,10 @@ public class ClassPath
      */
     public boolean hasOutput()
     {
-        for (ClassPathEntry classPathEntry : classPathEntries) {
-            if (classPathEntry.isOutput()) {
+        for (int index = 0; index < classPathEntries.size(); index++)
+        {
+            if (((ClassPathEntry)classPathEntries.get(index)).isOutput())
+            {
                 return true;
             }
         }
@@ -73,12 +75,12 @@ public class ClassPath
 
     public ClassPathEntry get(int index)
     {
-        return classPathEntries.get(index);
+        return (ClassPathEntry)classPathEntries.get(index);
     }
 
     public ClassPathEntry remove(int index)
     {
-        return classPathEntries.remove(index);
+        return (ClassPathEntry)classPathEntries.remove(index);
     }
 
     public boolean isEmpty()

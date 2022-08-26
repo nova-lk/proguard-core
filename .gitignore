@@ -6,3 +6,4 @@ build
 /docs/md/api/
 /docs/html/
 /venv/
+*/out/
