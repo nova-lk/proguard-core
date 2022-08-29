@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020 Guardsquare NV
+ * Copyright (c) 2002-2022 Guardsquare NV
  * Copyright (c) 2009-2013 Panxiaobo
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
