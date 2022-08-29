@@ -105,6 +105,14 @@ public class OutputWriter {
 
         // Create a main data entry writer factory for all nested archives.
         DataEntryWriterFactory dataEntryWriterFactory =
+//                new DataEntryWriterFactory(
+//                        programClassPool,
+//                        dalvik,
+//                        dexDataEntryWriterFactory,
+//                        uncompressedFilter,
+//                        1,
+//                        android,
+//                        modificationTime);
                 new DataEntryWriterFactory(
                         programClassPool,
                         dalvik,

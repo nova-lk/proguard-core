@@ -70,7 +70,7 @@ public class InputReader {
     private boolean skipNonPublicLibraryClassMembers = true;
 
 
-    public InputReader (ClassPath programJars, ClassPath libraryJars)
+    public InputReader(ClassPath programJars, ClassPath libraryJars)
     {
         this.programJars = programJars;
         this.libraryJars = libraryJars;

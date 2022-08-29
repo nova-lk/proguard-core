@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2002-2020 Guardsquare NV
  */
-package proguard.io;
+package proguard.util;
 
 import proguard.classfile.*;
 import proguard.util.StringFunction;

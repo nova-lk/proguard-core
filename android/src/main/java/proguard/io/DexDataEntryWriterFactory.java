@@ -19,6 +19,7 @@ package proguard.io;
 
 import proguard.classfile.ClassConstants;
 import proguard.classfile.ClassPool;
+import proguard.util.ClassPoolFeatureNameFunction;
 import proguard.util.EmptyStringMatcher;
 import proguard.util.FixedStringMatcher;
 import proguard.util.StringMatcher;
