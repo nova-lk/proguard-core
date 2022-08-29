@@ -1,3 +1,20 @@
+/*
+ * ProGuardCORE -- library to process Java bytecode.
+ *
+ * Copyright (c) 2002-2022 Guardsquare NV
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package proguard.io;
 
 import proguard.classfile.ClassPool;
@@ -16,31 +33,43 @@ public class OutputWriter {
     /**
      * A list of input and output entries (jars, wars, ears, jmods, zips, and directories).
      */
-    private final ClassPath programJars;
+    private final ClassPath     programJars;
 
     /**
      * A list of library entries (jars, wars, ears, jmods, zips, and directories).
      */
-    private final ClassPath libraryJars;
+    private final ClassPath    libraryJars;
 
     /**
      * A list of String instances specifying a filter for files that should
      * not be compressed in output jars.
      */
     private final List<String> dontCompress;
+    private final int          multiDexCount;
+    private final int          minSdkVersion;
+    private final boolean      debuggable;
+
 
     /**
      * Specifies whether the code should be targeted at the Android platform.
      */
-    private boolean android = true;
+    private boolean            android = true;
+    private boolean            dalvik = true;
 
-    private boolean dalvik = true;
 
-
-    public OutputWriter(ClassPath programJars, ClassPath libraryJars, List<String> dontCompress) {
-        this.programJars = programJars;
-        this.libraryJars = libraryJars;
-        this.dontCompress = dontCompress;
+    public OutputWriter(ClassPath programJars,
+                        ClassPath libraryJars,
+                        List<String> dontCompress,
+                        int multiDexCount,
+                        int minSdkVersion,
+                        boolean debuggable)
+    {
+        this.programJars   = programJars;
+        this.libraryJars   = libraryJars;
+        this.dontCompress  = dontCompress;
+        this.multiDexCount = multiDexCount;
+        this.minSdkVersion = minSdkVersion;
+        this.debuggable    = debuggable;
     }
 
     public void execute(ClassPool programClassPool, ClassPool libraryClassPool) throws IOException {
@@ -54,11 +83,11 @@ public class OutputWriter {
         Date currentDate = new Date();
         int modificationTime =
                 (currentDate.getYear()  - 80) << 25 |
-                        (currentDate.getMonth() + 1 ) << 21 |
-                        currentDate.getDate()        << 16 |
-                        currentDate.getHours()       << 11 |
-                        currentDate.getMinutes()     << 5  |
-                        currentDate.getSeconds()     >> 1;
+                (currentDate.getMonth() + 1 ) << 21 |
+                 currentDate.getDate()        << 16 |
+                 currentDate.getHours()       << 11 |
+                 currentDate.getMinutes()     << 5  |
+                 currentDate.getSeconds()     >> 1;
 
         // Create a data entry writer factory for dex files.
         DexDataEntryWriterFactory dexDataEntryWriterFactory =
@@ -67,7 +96,9 @@ public class OutputWriter {
                                 programClassPool,
                                 libraryJars,
                                 false,
-                                1,
+                                multiDexCount,
+                                minSdkVersion,
+                                debuggable,
                                 null) :
                         null;
 

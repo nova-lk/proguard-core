@@ -1,8 +1,19 @@
 /*
- * ProGuard -- shrinking, optimization, obfuscation, and preverification
- *             of Java bytecode.
+ * ProGuardCORE -- library to process Java bytecode.
  *
- * Copyright (c) 2002-2020 Guardsquare NV
+ * Copyright (c) 2002-2022 Guardsquare NV
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package proguard.io;
 
@@ -18,8 +29,6 @@ import proguard.classfile.Clazz;
 import proguard.classfile.ProgramClass;
 import proguard.classfile.io.ProgramClassWriter;
 import proguard.classfile.visitor.ClassVisitor;
-import proguard.io.ClassPath;
-import proguard.io.ClassPathEntry;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -88,9 +97,14 @@ public class D8ClassConverter implements ClassVisitor
     {
         private final InMemoryDexConsumer consumer;
         private final D8Command.Builder  androidAppBuilder;
+        private final int minSdkVersion;
+        private final boolean debuggable;
 
-        public D8DexFile(ClassPath libraryJars)
+        public D8DexFile(ClassPath libraryJars, int minSdkVersion, boolean debuggable)
         {
+            this.minSdkVersion = minSdkVersion;
+            this.debuggable = debuggable;
+
             consumer          = new InMemoryDexConsumer();
             androidAppBuilder = D8Command.builder();
 
@@ -133,11 +147,11 @@ public class D8ClassConverter implements ClassVisitor
             try {
                 D8.run(
                     androidAppBuilder
-//                        .setMinApiLevel() //TODO
+                        .setMinApiLevel(minSdkVersion)
                         .setDisableDesugaring(true)
-//                        .setMode(debuggable ? CompilationMode.DEBUG : CompilationMode.RELEASE) //todo
+                        .setMode(debuggable ? CompilationMode.DEBUG : CompilationMode.RELEASE)
                         .setProgramConsumer(consumer)
-                            .setIntermediate(false)
+                        .setIntermediate(false)
                         .build()
                 );
                 outputStream.write(consumer.data);
