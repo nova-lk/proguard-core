@@ -8,6 +8,7 @@ package proguard.io;
 
 import com.android.tools.r8.ByteDataView;
 import com.android.tools.r8.CompilationFailedException;
+import com.android.tools.r8.CompilationMode;
 import com.android.tools.r8.D8;
 import com.android.tools.r8.D8Command;
 import com.android.tools.r8.DexIndexedConsumer;
@@ -132,7 +133,11 @@ public class D8ClassConverter implements ClassVisitor
             try {
                 D8.run(
                     androidAppBuilder
+//                        .setMinApiLevel() //TODO
+                        .setDisableDesugaring(true)
+//                        .setMode(debuggable ? CompilationMode.DEBUG : CompilationMode.RELEASE) //todo
                         .setProgramConsumer(consumer)
+                            .setIntermediate(false)
                         .build()
                 );
                 outputStream.write(consumer.data);
