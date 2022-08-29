@@ -1,10 +1,15 @@
 import com.android.tools.r8.CompilationFailedException;
 import proguard.classfile.ClassPool;
+import proguard.classfile.VersionConstants;
+import proguard.classfile.attribute.visitor.AllAttributeVisitor;
 import proguard.classfile.util.PrimitiveArrayConstantReplacer;
+import proguard.classfile.visitor.AllMethodVisitor;
+import proguard.classfile.visitor.ClassVersionFilter;
 import proguard.io.ClassPath;
 import proguard.io.ClassPathEntry;
 import proguard.io.InputReader;
 import proguard.io.OutputWriter;
+import proguard.preverify.CodePreverifier;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,8 +23,8 @@ public class TestRun {
 //        String inputPath = "/home/pramitha/Downloads/app2.apk";
 //        String inputPath = "/home/pramitha/Downloads/SmaliSamples";
 
-        File inputFile = new File("/home/pramitha/Downloads/app2.apk");
-        File outputFile = new File("/home/pramitha/Downloads/DexOut/output/pgc_out.apk");
+        File inputFile = new File("/home/pramitha/Downloads/apprelease.apk");
+        File outputFile = new File("/home/pramitha/Downloads/DexOut/output/pgc_out_debug.apk");
 
         File libraryFile = new File("/home/pramitha/Android/Sdk/platforms/android-33/android.jar");
 
@@ -42,10 +47,18 @@ public class TestRun {
 
 //        libraryClassPool.classesAccept(new ClassPrinter());
 //        programClassPool.classesAccept(new ClassPrinter());
-        programClassPool.classesAccept(new PrimitiveArrayConstantReplacer());
+//        programClassPool.classesAccept(new PrimitiveArrayConstantReplacer());
+        programClassPool.classesAccept(
+                new ClassVersionFilter(VersionConstants.CLASS_VERSION_1_6,
+                        new AllMethodVisitor(
+                                new AllAttributeVisitor(
+                                        new CodePreverifier(false)))));
+
 
         new OutputWriter(programJars, libraryjars, dontCompress)
         .execute(programClassPool, libraryClassPool);
+
+
 
 ////         Create the writer for the main file or directory.
 //        DataEntryWriter writer = outputDex.isFile() ? new FixedFileWriter(outputDex) : new DirectoryWriter(outputDex);
